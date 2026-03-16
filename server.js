@@ -90,6 +90,19 @@ io.emit("update",bookings)
 
 })
 
+socket.on("blockDay",(data)=>{
+
+const {password,day}=data
+
+if(password!==ADMIN_PASSWORD) return
+
+bookings[day]={blockedDay:true}
+
+save()
+io.emit("update",bookings)
+
+})
+
 socket.on("adminDelete",(data)=>{
 
 const {password,day,time}=data
