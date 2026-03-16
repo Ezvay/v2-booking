@@ -23,7 +23,7 @@ app.post("/api/reserve",(req,res)=>{
 
  const data = read("reservations.json")
 
- const pin = Math.floor(100000+Math.random()*900000)
+ const pin = req.body.pin
 
  const r={
   date:req.body.date,
