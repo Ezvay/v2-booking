@@ -1,0 +1,25 @@
+body{
+
+background:#0b0b0b;
+color:#d4af37;
+font-family:serif;
+
+}
+
+.calendar{
+
+max-width:900px;
+margin:auto;
+
+}
+
+.slot{
+
+background:#1a1a1a;
+border:1px solid gold;
+padding:12px;
+margin:10px;
+display:flex;
+justify-content:space-between;
+
+}
