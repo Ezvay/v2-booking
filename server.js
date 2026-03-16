@@ -10,13 +10,16 @@ const FILE="data.json"
 const ADMIN_PASSWORD="platforma"
 
 let bookings={}
+let stats={sm:0,yang:0}
 
 if(fs.existsSync(FILE)){
-bookings=JSON.parse(fs.readFileSync(FILE))
+let data=JSON.parse(fs.readFileSync(FILE))
+bookings=data.bookings||{}
+stats=data.stats||stats
 }
 
 function save(){
-fs.writeFileSync(FILE,JSON.stringify(bookings,null,2))
+fs.writeFileSync(FILE,JSON.stringify({bookings,stats},null,2))
 }
 
 function getDay(day){
@@ -26,99 +29,88 @@ return bookings[day]
 
 io.on("connection",(socket)=>{
 
-socket.emit("update",bookings)
+socket.emit("init",{bookings,stats})
 
 socket.on("book",(data)=>{
 
 const {day,time,player,pin,type}=data
-
 let d=getDay(day)
 
 if(!d[time]){
-d[time]={type:type,players:[{player,pin}]}
-save()
-io.emit("update",bookings)
-return
+d[time]={type,players:[{player,pin}]}
+}else{
+if(d[time].players.length>=d[time].type) return
+d[time].players.push({player,pin})
 }
 
-let slot=d[time]
-
-if(slot.blocked) return
-if(slot.players.length>=slot.type) return
-
-slot.players.push({player,pin})
+if(type===1) stats.sm+=5000
+if(type===2) stats.sm+=2000
+if(type===3) stats.sm+=1500
 
 save()
-io.emit("update",bookings)
+io.emit("update",{bookings,stats})
 
 })
 
 socket.on("cancel",(data)=>{
 
 const {day,time,pin}=data
-
 let d=getDay(day)
 
 if(!d[time]) return
 
 d[time].players=d[time].players.filter(p=>p.pin!==pin)
 
-if(d[time].players.length===0){
-delete d[time]
-}
+if(d[time].players.length===0) delete d[time]
 
 save()
-io.emit("update",bookings)
+io.emit("update",{bookings,stats})
 
 })
 
 socket.on("blockHour",(data)=>{
 
-const {password,day,time}=data
-if(password!==ADMIN_PASSWORD) return
+if(data.password!==ADMIN_PASSWORD) return
 
-let d=getDay(day)
-d[time]={blocked:true}
+let d=getDay(data.day)
+d[data.time]={blocked:true}
 
 save()
-io.emit("update",bookings)
+io.emit("update",{bookings,stats})
 
 })
 
 socket.on("unblockHour",(data)=>{
 
-const {password,day,time}=data
-if(password!==ADMIN_PASSWORD) return
+if(data.password!==ADMIN_PASSWORD) return
 
-let d=getDay(day)
-delete d[time]
+let d=getDay(data.day)
+delete d[data.time]
 
 save()
-io.emit("update",bookings)
+io.emit("update",{bookings,stats})
 
 })
 
 socket.on("blockDay",(data)=>{
 
-const {password,day}=data
-if(password!==ADMIN_PASSWORD) return
+if(data.password!==ADMIN_PASSWORD) return
 
-bookings[day]={blockedDay:true}
+bookings[data.day]={blockedDay:true}
 
 save()
-io.emit("update",bookings)
+io.emit("update",{bookings,stats})
 
 })
 
 socket.on("unblockDay",(data)=>{
 
-const {password,day}=data
-if(password!==ADMIN_PASSWORD) return
+if(data.password!==ADMIN_PASSWORD) return
 
-delete bookings[day]
+delete bookings[data.day]
 
 save()
-io.emit("update",bookings)
+io.emit("update",{bookings,stats})
 
 })
 
