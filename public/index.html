@@ -1,56 +1,131 @@
 <!DOCTYPE html>
 <html lang="pl">
-
 <head>
 
 <meta charset="UTF-8">
-
-<title>V2 EXP – Spider Dungeon</title>
+<title>V2 EXP BOOST</title>
 
 <script src="/socket.io/socket.io.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 
 body{
 margin:0;
-font-family:Georgia;
-background:url("https://en-wiki.metin2.gameforge.com/images/SpiderDungeon2.jpg") center/cover fixed;
-color:#f2e6c4;
+font-family:Segoe UI;
+background:#0b0b0f;
+color:white;
+overflow-x:hidden;
 }
 
-.overlay{
-background:rgba(0,0,0,0.85);
-min-height:100vh;
+/* PARALLAX BACKGROUND */
+
+.bg{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:url("https://en-wiki.metin2.gameforge.com/images/SpiderDungeon2.jpg") center/cover;
+z-index:-2;
 }
 
-header{
+/* FOG */
+
+.fog{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:url("https://i.imgur.com/8QfQK2G.png");
+opacity:0.15;
+animation:fogMove 60s linear infinite;
+z-index:-1;
+}
+
+@keyframes fogMove{
+from{transform:translateX(0)}
+to{transform:translateX(-1000px)}
+}
+
+/* HERO */
+
+.hero{
+height:500px;
+display:flex;
+flex-direction:column;
+align-items:center;
+justify-content:center;
 text-align:center;
-padding:40px;
-border-bottom:3px solid #bfa046;
 }
 
 #logo{
-height:420px;
+width:720px;
+max-width:90%;
+animation:glow 3s infinite alternate;
 }
 
-.title{
-font-size:40px;
-letter-spacing:2px;
-color:#e3c87c;
-margin-top:10px;
+@keyframes glow{
+from{filter:drop-shadow(0 0 10px gold)}
+to{filter:drop-shadow(0 0 40px gold)}
 }
+
+/* BUTTON */
+
+.runeButton{
+margin-top:20px;
+padding:15px 30px;
+background:linear-gradient(#6b4d1f,#3b2a0f);
+border:2px solid #caa64a;
+color:#ffd36a;
+font-size:18px;
+cursor:pointer;
+transition:0.3s;
+}
+
+.runeButton:hover{
+transform:scale(1.05);
+box-shadow:0 0 20px rgba(255,215,100,0.5);
+}
+
+/* PRICING */
+
+.pricing{
+display:flex;
+justify-content:center;
+gap:40px;
+padding:40px;
+flex-wrap:wrap;
+}
+
+.priceCard{
+background:#141418;
+border:2px solid #caa64a;
+padding:30px;
+width:240px;
+text-align:center;
+transition:0.3s;
+}
+
+.priceCard:hover{
+transform:scale(1.08);
+box-shadow:0 0 30px rgba(255,215,100,0.5);
+}
+
+/* CALENDAR */
 
 .calendar{
 display:grid;
 grid-template-columns:repeat(7,1fr);
-max-width:800px;
+max-width:900px;
 margin:40px auto;
-gap:8px;
+gap:10px;
 }
 
 .day{
-background:#111;
-border:1px solid #5a4a2c;
+background:#141418;
+border:1px solid #444;
 padding:14px;
 text-align:center;
 cursor:pointer;
@@ -58,12 +133,14 @@ transition:0.2s;
 }
 
 .day:hover{
-background:#1b1b1b;
+background:#1d1d22;
 }
 
 .day.active{
-border:2px solid #e3c87c;
+border:2px solid gold;
 }
+
+/* SLOTS */
 
 #slots{
 max-width:1200px;
@@ -75,63 +152,22 @@ padding:20px;
 }
 
 .slot{
-background:#121212;
-border:2px solid #3b2e14;
-border-radius:12px;
-padding:18px;
+background:#141418;
+border:2px solid #333;
+border-radius:14px;
+padding:16px;
 transition:0.25s;
 }
 
 .slot:hover{
-transform:scale(1.04);
-box-shadow:0 0 20px rgba(227,200,124,0.4);
+transform:translateY(-5px);
+box-shadow:0 0 25px rgba(255,215,100,0.4);
 }
 
-.free{
-border-color:#2c7a2c;
-}
+.free{border-color:#2e9c45}
+.taken{border-color:#b23}
 
-.taken{
-border-color:#9e2b2b;
-}
-
-.blocked{
-border-color:#666;
-}
-
-.slotTitle{
-font-size:18px;
-margin-bottom:8px;
-color:#e3c87c;
-}
-
-.players{
-font-size:14px;
-margin-bottom:8px;
-}
-
-input{
-width:100%;
-margin-top:5px;
-background:#1a1a1a;
-border:1px solid #555;
-color:white;
-padding:6px;
-}
-
-button{
-margin-top:6px;
-width:100%;
-background:#3b2a0f;
-border:1px solid #e3c87c;
-color:#e3c87c;
-padding:6px;
-cursor:pointer;
-}
-
-button:hover{
-background:#5a3f14;
-}
+/* CHAT */
 
 #chat{
 position:fixed;
@@ -139,25 +175,49 @@ left:20px;
 bottom:20px;
 width:260px;
 background:#111;
-border:2px solid #e3c87c;
+border:2px solid gold;
 padding:10px;
 }
 
 #chatMessages{
-height:150px;
+height:160px;
 overflow:auto;
-font-size:13px;
-margin-bottom:6px;
 }
+
+/* RANKING */
 
 #ranking{
 position:fixed;
 right:20px;
-top:160px;
+top:200px;
 background:#111;
-border:2px solid #e3c87c;
+border:2px solid gold;
 padding:10px;
 width:200px;
+}
+
+/* ADMIN */
+
+#admin{
+position:fixed;
+right:20px;
+bottom:20px;
+background:#111;
+border:2px solid gold;
+padding:15px;
+display:none;
+width:320px;
+}
+
+.toast{
+position:fixed;
+top:20px;
+left:50%;
+transform:translateX(-50%);
+background:#111;
+border:2px solid gold;
+padding:10px;
+display:none;
 }
 
 </style>
@@ -166,15 +226,24 @@ width:200px;
 
 <body>
 
-<div class="overlay">
+<div class="bg"></div>
+<div class="fog"></div>
 
-<header>
+<div class="hero">
 
-<img id="logo" src="https://prnt.sc/BRxl1uLayID1">
+<img id="logo" src="https://zapodaj.net/images/01e4e4691fd7a.png">
 
-<div class="title">Spider Dungeon V2 EXP</div>
+<button class="runeButton" onclick="scrollSlots()">Zarezerwuj EXP</button>
 
-</header>
+</div>
+
+<div class="pricing">
+
+<div class="priceCard">SOLO<br>5000 SM</div>
+<div class="priceCard">PARTY 2<br>2000 SM</div>
+<div class="priceCard">PARTY 3<br>1500 SM</div>
+
+</div>
 
 <div id="calendar" class="calendar"></div>
 
@@ -184,7 +253,7 @@ width:200px;
 
 <div id="chatMessages"></div>
 
-<input id="chatInput" placeholder="Napisz wiadomość">
+<input id="chatInput" placeholder="Napisz...">
 
 <button onclick="sendChat()">Wyślij</button>
 
@@ -192,13 +261,23 @@ width:200px;
 
 <div id="ranking">
 
-<b>Najwięcej expili</b>
+<b>Ranking</b>
 
 <div id="rankingList"></div>
 
 </div>
 
+<div id="admin">
+
+<h3>Panel Admina</h3>
+
+<div>SM zarobione: <span id="statSM"></span></div>
+
+<canvas id="chart"></canvas>
+
 </div>
+
+<div id="toast" class="toast"></div>
 
 <script>
 
@@ -207,16 +286,35 @@ const socket=io()
 let bookings={}
 let ranking={}
 let chat=[]
+let stats={}
 let selectedDay=null
+
+function toast(msg){
+
+let t=document.getElementById("toast")
+
+t.innerText=msg
+t.style.display="block"
+
+setTimeout(()=>t.style.display="none",2000)
+
+}
+
+function scrollSlots(){
+document.getElementById("slots").scrollIntoView({behavior:"smooth"})
+}
+
+/* SOCKET */
 
 socket.on("init",(data)=>{
 
 bookings=data.bookings
 ranking=data.ranking
 chat=data.chat
+stats=data.stats||{}
 
-renderChat()
 renderRanking()
+renderChat()
 
 })
 
@@ -224,6 +322,7 @@ socket.on("update",(data)=>{
 
 bookings=data.bookings
 ranking=data.ranking
+stats=data.stats||{}
 
 renderSlots()
 renderRanking()
@@ -237,14 +336,15 @@ renderChat()
 
 })
 
+/* CHAT */
+
 function renderChat(){
 
 let box=document.getElementById("chatMessages")
+
 box.innerHTML=""
 
-chat.forEach(m=>{
-box.innerHTML+="<div>"+m+"</div>"
-})
+chat.forEach(m=>box.innerHTML+="<div>"+m+"</div>")
 
 }
 
@@ -258,6 +358,8 @@ document.getElementById("chatInput").value=""
 
 }
 
+/* RANKING */
+
 function renderRanking(){
 
 let box=document.getElementById("rankingList")
@@ -267,18 +369,38 @@ box.innerHTML=""
 Object.entries(ranking)
 .sort((a,b)=>b[1]-a[1])
 .slice(0,10)
-.forEach(r=>{
-box.innerHTML+="<div>"+r[0]+" ("+r[1]+")</div>"
-})
+.forEach(r=>box.innerHTML+="<div>"+r[0]+" ("+r[1]+")</div>")
 
 }
+
+/* ADMIN LOGIN */
+
+document.addEventListener("keydown",e=>{
+
+if(e.key==="F2"){
+
+let pass=prompt("Admin password")
+
+if(pass==="platforma"){
+
+document.getElementById("admin").style.display="block"
+
+}
+
+}
+
+})
+
+/* CALENDAR */
 
 function buildCalendar(){
 
 let cal=document.getElementById("calendar")
 
 let date=new Date()
+
 let year=date.getFullYear()
+
 let month=date.getMonth()
 
 let days=new Date(year,month+1,0).getDate()
@@ -286,7 +408,9 @@ let days=new Date(year,month+1,0).getDate()
 for(let i=1;i<=days;i++){
 
 let d=document.createElement("div")
+
 d.className="day"
+
 d.innerText=i
 
 let iso=year+"-"+String(month+1).padStart(2,"0")+"-"+String(i).padStart(2,"0")
@@ -309,6 +433,8 @@ cal.appendChild(d)
 
 }
 
+/* SLOTS */
+
 function renderSlots(){
 
 if(!selectedDay) return
@@ -322,9 +448,9 @@ let dayData=bookings[selectedDay]||{}
 for(let h=0;h<24;h++){
 
 let start=String(h).padStart(2,"0")+":00"
-let end=String((h+1)%24).padStart(2,"0")+":00"
 
 let div=document.createElement("div")
+
 div.className="slot"
 
 let slot=dayData[start]
@@ -334,7 +460,7 @@ if(!slot){
 div.classList.add("free")
 
 div.innerHTML=`
-<div class="slotTitle">${start}-${end}</div>
+<b>${start}</b>
 
 <input id="p_${start}" placeholder="Nick">
 
@@ -342,16 +468,10 @@ div.innerHTML=`
 
 <button onclick="book('${start}',1)">Solo</button>
 
-<button onclick="book('${start}',2)">Party 2</button>
+<button onclick="book('${start}',2)">Party2</button>
 
-<button onclick="book('${start}',3)">Party 3</button>
+<button onclick="book('${start}',3)">Party3</button>
 `
-
-}else if(slot.blocked){
-
-div.classList.add("blocked")
-
-div.innerHTML=`<div class="slotTitle">${start}-${end}</div>Brak expa`
 
 }else{
 
@@ -359,16 +479,14 @@ div.classList.add("taken")
 
 let players=""
 
-slot.players.forEach(p=>{
-players+="<div>"+p.player+"</div>"
-})
+slot.players.forEach(p=>players+="<div>"+p.player+"</div>")
 
 div.innerHTML=`
-<div class="slotTitle">${start}-${end}</div>
+<b>${start}</b>
 
-<div class="players">${players}</div>
+${players}
 
-<input id="pin_cancel_${start}" placeholder="PIN anulowania">
+<input id="pin_cancel_${start}" placeholder="PIN">
 
 <button onclick="cancel('${start}')">Anuluj</button>
 `
@@ -388,6 +506,8 @@ let pin=document.getElementById("pin_"+time).value
 
 socket.emit("book",{day:selectedDay,time,player,pin,type})
 
+toast("Rezerwacja zapisana")
+
 }
 
 function cancel(time){
@@ -395,6 +515,8 @@ function cancel(time){
 let pin=document.getElementById("pin_cancel_"+time).value
 
 socket.emit("cancel",{day:selectedDay,time,pin})
+
+toast("Rezerwacja anulowana")
 
 }
 
