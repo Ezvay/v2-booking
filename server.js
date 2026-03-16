@@ -10,18 +10,18 @@ const FILE="data.json"
 const ADMIN_PASSWORD="platforma"
 
 let bookings={}
-let stats={sm:0,yang:0}
 let chat=[]
+let ranking={}
 
 if(fs.existsSync(FILE)){
 let data=JSON.parse(fs.readFileSync(FILE))
 bookings=data.bookings||{}
-stats=data.stats||stats
 chat=data.chat||[]
+ranking=data.ranking||{}
 }
 
 function save(){
-fs.writeFileSync(FILE,JSON.stringify({bookings,stats,chat},null,2))
+fs.writeFileSync(FILE,JSON.stringify({bookings,chat,ranking},null,2))
 }
 
 function getDay(day){
@@ -31,11 +31,12 @@ return bookings[day]
 
 io.on("connection",(socket)=>{
 
-socket.emit("init",{bookings,stats,chat})
+socket.emit("init",{bookings,chat,ranking})
 
 socket.on("book",(data)=>{
 
 const {day,time,player,pin,type}=data
+
 let d=getDay(day)
 
 if(!d[time]){
@@ -45,12 +46,12 @@ if(d[time].players.length>=d[time].type) return
 d[time].players.push({player,pin})
 }
 
-if(type===1) stats.sm+=5000
-if(type===2) stats.sm+=2000
-if(type===3) stats.sm+=1500
+if(!ranking[player]) ranking[player]=0
+ranking[player]++
 
 save()
-io.emit("update",{bookings,stats,chat})
+
+io.emit("update",{bookings,chat,ranking})
 
 })
 
@@ -63,12 +64,11 @@ if(!d[time]) return
 
 d[time].players=d[time].players.filter(p=>p.pin!==pin)
 
-if(d[time].players.length===0){
-delete d[time]
-}
+if(d[time].players.length===0) delete d[time]
 
 save()
-io.emit("update",{bookings,stats,chat})
+
+io.emit("update",{bookings,chat,ranking})
 
 })
 
@@ -80,41 +80,8 @@ let d=getDay(data.day)
 d[data.time]={blocked:true}
 
 save()
-io.emit("update",{bookings,stats,chat})
 
-})
-
-socket.on("unblockHour",(data)=>{
-
-if(data.password!==ADMIN_PASSWORD) return
-
-let d=getDay(data.day)
-delete d[data.time]
-
-save()
-io.emit("update",{bookings,stats,chat})
-
-})
-
-socket.on("blockDay",(data)=>{
-
-if(data.password!==ADMIN_PASSWORD) return
-
-bookings[data.day]={blockedDay:true}
-
-save()
-io.emit("update",{bookings,stats,chat})
-
-})
-
-socket.on("unblockDay",(data)=>{
-
-if(data.password!==ADMIN_PASSWORD) return
-
-delete bookings[data.day]
-
-save()
-io.emit("update",{bookings,stats,chat})
+io.emit("update",{bookings,chat,ranking})
 
 })
 
@@ -124,6 +91,7 @@ chat.push(msg)
 if(chat.length>100) chat.shift()
 
 save()
+
 io.emit("chat",chat)
 
 })
