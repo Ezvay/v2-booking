@@ -1,9 +1,15 @@
-const router = require("express").Router()
+const express = require("express")
+const router = express.Router()
+const pool = require("../db")
 
-const controller = require("../controllers/reservationController")
-const auth = require("../middleware/auth")
+router.get("/slots", async (req,res)=>{
 
-router.get("/slots",controller.getSlots)
-router.post("/create",auth,controller.createReservation)
+ const result = await pool.query(
+  "SELECT * FROM slots ORDER BY date,hour"
+ )
+
+ res.json(result.rows)
+
+})
 
 module.exports = router
