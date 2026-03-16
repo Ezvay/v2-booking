@@ -1,0 +1,40 @@
+body{
+margin:0;
+background:#0b0b0f;
+color:white;
+font-family:Segoe UI;
+}
+
+.hero{
+height:400px;
+display:flex;
+align-items:center;
+justify-content:center;
+background:url("https://en-wiki.metin2.gameforge.com/images/SpiderDungeon2.jpg") center/cover;
+}
+
+.logo{
+width:600px;
+filter:drop-shadow(0 0 40px gold);
+}
+
+#calendar{
+display:grid;
+grid-template-columns:repeat(7,1fr);
+max-width:900px;
+margin:auto;
+}
+
+.day{
+padding:12px;
+border:1px solid #444;
+cursor:pointer;
+text-align:center;
+}
+
+.slot{
+border:2px solid gold;
+background:#141418;
+padding:10px;
+margin:10px;
+}
