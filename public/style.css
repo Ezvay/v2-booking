@@ -36,7 +36,7 @@ background:#3a260c;
 
 #slots{
 display:grid;
-grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
 gap:15px;
 }
 
@@ -61,6 +61,15 @@ background:#1e3b1e;
 background:#3b1e1e;
 }
 
+input{
+width:90%;
+margin-top:5px;
+background:#111;
+color:#e8c46a;
+border:1px solid #caa24c;
+padding:4px;
+}
+
 button{
 background:#caa24c;
 border:none;
@@ -72,12 +81,4 @@ border-radius:4px;
 
 button:hover{
 background:#e8c46a;
-}
-
-textarea{
-width:300px;
-height:80px;
-background:#2b1a07;
-color:#e8c46a;
-border:1px solid #caa24c;
 }
