@@ -32,25 +32,21 @@ socket.on("book",(data)=>{
 
 const {day,time,player,pin,type}=data
 
-let d = getDay(day)
+let d=getDay(day)
 
 if(!d[time]){
-
 d[time]={
-type:type,
+type:parseInt(type),
 players:[{player,pin}]
 }
-
 save()
 io.emit("update",bookings)
 return
-
 }
 
 let slot=d[time]
 
 if(slot.blocked) return
-if(slot.type==="solo") return
 if(slot.players.length>=slot.type) return
 
 slot.players.push({player,pin})
