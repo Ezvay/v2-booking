@@ -9,14 +9,27 @@ h1{
 color:gold;
 }
 
-.controls{
+#calendar{
+display:flex;
+flex-wrap:wrap;
 margin-bottom:20px;
+}
+
+.day{
+border:1px solid gold;
+padding:8px;
+margin:4px;
+cursor:pointer;
+}
+
+.day:hover{
+background:#222;
 }
 
 .slot{
 border:1px solid gold;
 padding:10px;
-margin:5px;
+margin:6px;
 display:flex;
 justify-content:space-between;
 align-items:center;
@@ -31,4 +44,10 @@ cursor:pointer;
 
 button:hover{
 background:#ffd700;
+}
+
+.admin{
+margin-top:40px;
+border-top:1px solid gold;
+padding-top:20px;
 }
