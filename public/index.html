@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="pl">
+
 <head>
+
 <meta charset="UTF-8">
 
-<title>V2 EXP PANEL</title>
+<title>V2 EXP – Spider Dungeon</title>
 
 <script src="/socket.io/socket.io.js"></script>
 
@@ -11,9 +13,9 @@
 
 body{
 margin:0;
-font-family:Segoe UI;
+font-family:Georgia;
 background:url("https://en-wiki.metin2.gameforge.com/images/SpiderDungeon2.jpg") center/cover fixed;
-color:white;
+color:#f2e6c4;
 }
 
 .overlay{
@@ -22,95 +24,113 @@ min-height:100vh;
 }
 
 header{
-display:flex;
-justify-content:center;
-align-items:center;
-border-bottom:3px solid gold;
-padding:20px;
-position:relative;
+text-align:center;
+padding:40px;
+border-bottom:3px solid #bfa046;
 }
 
 #logo{
-height:350px;
+height:420px;
 }
 
-#adminBtn{
-position:absolute;
-right:30px;
-top:30px;
-font-size:30px;
-cursor:pointer;
-color:gold;
+.title{
+font-size:40px;
+letter-spacing:2px;
+color:#e3c87c;
+margin-top:10px;
 }
 
 .calendar{
 display:grid;
 grid-template-columns:repeat(7,1fr);
-gap:10px;
-max-width:900px;
-margin:20px auto;
+max-width:800px;
+margin:40px auto;
+gap:8px;
 }
 
 .day{
 background:#111;
-border:1px solid #555;
-padding:15px;
+border:1px solid #5a4a2c;
+padding:14px;
 text-align:center;
 cursor:pointer;
 transition:0.2s;
 }
 
 .day:hover{
-background:#222;
+background:#1b1b1b;
 }
 
 .day.active{
-border:2px solid gold;
+border:2px solid #e3c87c;
 }
 
 #slots{
+max-width:1200px;
+margin:auto;
 display:grid;
 grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
 gap:20px;
-max-width:1300px;
-margin:auto;
 padding:20px;
 }
 
 .slot{
-background:#111;
-border:2px solid #333;
-padding:15px;
+background:#121212;
+border:2px solid #3b2e14;
 border-radius:12px;
-transition:0.2s;
+padding:18px;
+transition:0.25s;
 }
 
 .slot:hover{
-box-shadow:0 0 12px gold;
-transform:scale(1.02);
+transform:scale(1.04);
+box-shadow:0 0 20px rgba(227,200,124,0.4);
 }
 
-.free{border-color:green}
-.taken{border-color:red}
-.blocked{border-color:gray}
+.free{
+border-color:#2c7a2c;
+}
 
-button{
-background:#3b2a0f;
-border:1px solid gold;
-color:gold;
-padding:6px;
-cursor:pointer;
-margin-top:6px;
-width:100%;
+.taken{
+border-color:#9e2b2b;
+}
+
+.blocked{
+border-color:#666;
+}
+
+.slotTitle{
+font-size:18px;
+margin-bottom:8px;
+color:#e3c87c;
+}
+
+.players{
+font-size:14px;
+margin-bottom:8px;
 }
 
 input{
 width:100%;
-margin-top:6px;
-padding:6px;
-background:#222;
+margin-top:5px;
+background:#1a1a1a;
 border:1px solid #555;
 color:white;
+padding:6px;
+}
+
+button{
+margin-top:6px;
+width:100%;
+background:#3b2a0f;
+border:1px solid #e3c87c;
+color:#e3c87c;
+padding:6px;
+cursor:pointer;
+}
+
+button:hover{
+background:#5a3f14;
 }
 
 #chat{
@@ -119,46 +139,25 @@ left:20px;
 bottom:20px;
 width:260px;
 background:#111;
-border:2px solid gold;
+border:2px solid #e3c87c;
 padding:10px;
 }
 
 #chatMessages{
-height:160px;
-overflow-y:auto;
+height:150px;
+overflow:auto;
 font-size:13px;
+margin-bottom:6px;
 }
 
 #ranking{
 position:fixed;
-left:20px;
-top:150px;
+right:20px;
+top:160px;
 background:#111;
-border:2px solid gold;
+border:2px solid #e3c87c;
 padding:10px;
 width:200px;
-}
-
-#adminPanel{
-position:fixed;
-right:20px;
-bottom:20px;
-background:#111;
-border:2px solid gold;
-padding:15px;
-display:none;
-width:260px;
-}
-
-.toast{
-position:fixed;
-top:20px;
-left:50%;
-transform:translateX(-50%);
-background:#111;
-border:2px solid gold;
-padding:10px;
-display:none;
 }
 
 </style>
@@ -173,7 +172,7 @@ display:none;
 
 <img id="logo" src="https://prnt.sc/BRxl1uLayID1">
 
-<div id="adminBtn">⚙</div>
+<div class="title">Spider Dungeon V2 EXP</div>
 
 </header>
 
@@ -181,36 +180,23 @@ display:none;
 
 <div id="slots"></div>
 
-<div id="ranking">
-<b>Ranking klientów</b>
-<div id="rankingList"></div>
-</div>
-
 <div id="chat">
 
 <div id="chatMessages"></div>
 
-<input id="chatInput" placeholder="Napisz...">
+<input id="chatInput" placeholder="Napisz wiadomość">
 
 <button onclick="sendChat()">Wyślij</button>
 
 </div>
 
-<div id="adminPanel">
+<div id="ranking">
 
-<h3>ADMIN</h3>
+<b>Najwięcej expili</b>
 
-<div>SM: <span id="statSM">0</span></div>
-
-<button onclick="blockHour()">Zablokuj godzinę</button>
-<button onclick="unblockHour()">Odblokuj godzinę</button>
-
-<button onclick="blockDay()">Zablokuj dzień</button>
-<button onclick="unblockDay()">Odblokuj dzień</button>
+<div id="rankingList"></div>
 
 </div>
-
-<div id="toast" class="toast"></div>
 
 </div>
 
@@ -219,38 +205,24 @@ display:none;
 const socket=io()
 
 let bookings={}
-let stats={}
 let ranking={}
 let chat=[]
 let selectedDay=null
 
-function toast(msg){
-
-let t=document.getElementById("toast")
-
-t.innerText=msg
-t.style.display="block"
-
-setTimeout(()=>t.style.display="none",2000)
-
-}
-
 socket.on("init",(data)=>{
 
 bookings=data.bookings
-stats=data.stats
 ranking=data.ranking
 chat=data.chat
 
-renderRanking()
 renderChat()
+renderRanking()
 
 })
 
 socket.on("update",(data)=>{
 
 bookings=data.bookings
-stats=data.stats
 ranking=data.ranking
 
 renderSlots()
@@ -265,27 +237,9 @@ renderChat()
 
 })
 
-function renderRanking(){
-
-let box=document.getElementById("rankingList")
-
-box.innerHTML=""
-
-Object.entries(ranking)
-.sort((a,b)=>b[1]-a[1])
-.slice(0,10)
-.forEach(r=>{
-
-box.innerHTML+=`<div>${r[0]} (${r[1]})</div>`
-
-})
-
-}
-
 function renderChat(){
 
 let box=document.getElementById("chatMessages")
-
 box.innerHTML=""
 
 chat.forEach(m=>{
@@ -301,6 +255,21 @@ let msg=document.getElementById("chatInput").value
 socket.emit("chat",msg)
 
 document.getElementById("chatInput").value=""
+
+}
+
+function renderRanking(){
+
+let box=document.getElementById("rankingList")
+
+box.innerHTML=""
+
+Object.entries(ranking)
+.sort((a,b)=>b[1]-a[1])
+.slice(0,10)
+.forEach(r=>{
+box.innerHTML+="<div>"+r[0]+" ("+r[1]+")</div>"
+})
 
 }
 
@@ -350,18 +319,12 @@ container.innerHTML=""
 
 let dayData=bookings[selectedDay]||{}
 
-if(dayData.blockedDay){
-container.innerHTML="<h2 style='color:red'>EXP WYŁĄCZONE</h2>"
-return
-}
-
 for(let h=0;h<24;h++){
 
 let start=String(h).padStart(2,"0")+":00"
 let end=String((h+1)%24).padStart(2,"0")+":00"
 
 let div=document.createElement("div")
-
 div.className="slot"
 
 let slot=dayData[start]
@@ -371,43 +334,42 @@ if(!slot){
 div.classList.add("free")
 
 div.innerHTML=`
-<div>${start}-${end}</div>
+<div class="slotTitle">${start}-${end}</div>
 
 <input id="p_${start}" placeholder="Nick">
+
 <input id="pin_${start}" placeholder="PIN">
 
 <button onclick="book('${start}',1)">Solo</button>
-<button onclick="book('${start}',2)">Party2</button>
-<button onclick="book('${start}',3)">Party3</button>
+
+<button onclick="book('${start}',2)">Party 2</button>
+
+<button onclick="book('${start}',3)">Party 3</button>
 `
 
 }else if(slot.blocked){
 
 div.classList.add("blocked")
 
-div.innerHTML=`${start}-${end} ZABLOKOWANE`
+div.innerHTML=`<div class="slotTitle">${start}-${end}</div>Brak expa`
 
 }else{
 
 div.classList.add("taken")
 
-let playersHTML=""
+let players=""
 
 slot.players.forEach(p=>{
-playersHTML+="<div>"+p.player+"</div>"
+players+="<div>"+p.player+"</div>"
 })
 
 div.innerHTML=`
-<div>${start}-${end}</div>
-<div>Party ${slot.type}</div>
-${playersHTML}
+<div class="slotTitle">${start}-${end}</div>
 
-<input id="p_${start}" placeholder="Nick">
-<input id="pin_${start}" placeholder="PIN">
-
-<button onclick="join('${start}')">Dołącz</button>
+<div class="players">${players}</div>
 
 <input id="pin_cancel_${start}" placeholder="PIN anulowania">
+
 <button onclick="cancel('${start}')">Anuluj</button>
 `
 
@@ -426,19 +388,6 @@ let pin=document.getElementById("pin_"+time).value
 
 socket.emit("book",{day:selectedDay,time,player,pin,type})
 
-toast("Rezerwacja zapisana")
-
-}
-
-function join(time){
-
-let player=document.getElementById("p_"+time).value
-let pin=document.getElementById("pin_"+time).value
-
-socket.emit("book",{day:selectedDay,time,player,pin,type:3})
-
-toast("Dołączono do expa")
-
 }
 
 function cancel(time){
@@ -446,46 +395,6 @@ function cancel(time){
 let pin=document.getElementById("pin_cancel_"+time).value
 
 socket.emit("cancel",{day:selectedDay,time,pin})
-
-toast("Rezerwacja anulowana")
-
-}
-
-document.getElementById("adminBtn").onclick=()=>{
-
-let pass=prompt("Admin password")
-
-if(pass==="platforma"){
-document.getElementById("adminPanel").style.display="block"
-}
-
-}
-
-function blockHour(){
-
-let time=prompt("Godzina np 14:00")
-
-socket.emit("blockHour",{password:"platforma",day:selectedDay,time})
-
-}
-
-function unblockHour(){
-
-let time=prompt("Godzina np 14:00")
-
-socket.emit("unblockHour",{password:"platforma",day:selectedDay,time})
-
-}
-
-function blockDay(){
-
-socket.emit("blockDay",{password:"platforma",day:selectedDay})
-
-}
-
-function unblockDay(){
-
-socket.emit("unblockDay",{password:"platforma",day:selectedDay})
 
 }
 
