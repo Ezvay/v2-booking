@@ -74,6 +74,30 @@ container.appendChild(div)
 }
 
 loadSlots()
+ async function reserve(id){
+
+const type = prompt("Wpisz typ: solo / duo / trio")
+
+const res = await fetch("https://v2-booking-backend.onrender.com/api/reservations/reserve",{
+
+method:"POST",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+slotId:id,
+type:type
+})
+
+})
+
+const data = await res.json()
+
+alert("Rezerwacja wykonana. PIN: "+data.pin)
+
+}
 
 </script>
 
