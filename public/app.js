@@ -1,99 +1,110 @@
 const socket=io()
 
-let selectedDay=null
 let user=null
+let selectedDay=null
 
 function login(){
 
- fetch("/login",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({
-   nick:document.getElementById("nick").value,
-   password:document.getElementById("password").value
-  })
- })
- .then(r=>r.json())
- .then(data=>{
-  if(data.ok){
-   user=data.user
-   alert("Zalogowano")
-  }
- })
+fetch("/login",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+nick:document.getElementById("nick").value,
+password:document.getElementById("pass").value
+})
+})
+.then(r=>r.json())
+.then(data=>{
+
+if(data.ok){
+
+user=data.user
+
+buildCalendar()
+
+socket.emit("getBookings")
 
 }
+
+})
+
+}
+
+socket.on("bookings",(data)=>{
+
+renderSlots(data)
+
+})
 
 function buildCalendar(){
 
- const cal=document.getElementById("calendar")
+const cal=document.getElementById("calendar")
 
- const date=new Date()
+const date=new Date()
 
- const year=date.getFullYear()
- const month=date.getMonth()
+const year=date.getFullYear()
+const month=date.getMonth()
 
- const days=new Date(year,month+1,0).getDate()
+const days=new Date(year,month+1,0).getDate()
 
- for(let i=1;i<=days;i++){
+for(let i=1;i<=days;i++){
 
-  const d=document.createElement("div")
-  d.className="day"
-  d.innerText=i
+let d=document.createElement("div")
 
-  const iso=`${year}-${month+1}-${i}`
+d.className="day"
+d.innerText=i
 
-  d.onclick=()=>{
+let iso=`${year}-${month+1}-${i}`
 
-   selectedDay=iso
+d.onclick=()=>{
 
-   renderSlots()
+selectedDay=iso
 
-  }
-
-  cal.appendChild(d)
-
- }
+socket.emit("getBookings")
 
 }
 
-function renderSlots(){
+cal.appendChild(d)
 
- const container=document.getElementById("slots")
+}
 
- container.innerHTML=""
+}
 
- for(let h=0;h<24;h++){
+function renderSlots(bookings){
 
-  const time=String(h).padStart(2,"0")+":00"
+const slots=document.getElementById("slots")
 
-  const div=document.createElement("div")
-  div.className="slot"
+slots.innerHTML=""
 
-  div.innerHTML=`
+for(let h=0;h<24;h++){
 
-  <b>${time}</b>
+let time=String(h).padStart(2,"0")+":00"
 
-  <button onclick="book('${time}',1)">Solo</button>
-  <button onclick="book('${time}',2)">Party2</button>
-  <button onclick="book('${time}',3)">Party3</button>
+let div=document.createElement("div")
 
-  `
+div.className="slot"
 
-  container.appendChild(div)
+div.innerHTML=`
+<b>${time}</b>
 
- }
+<button onclick="book('${time}',1)">solo</button>
+<button onclick="book('${time}',2)">party2</button>
+<button onclick="book('${time}',3)">party3</button>
+`
+
+slots.appendChild(div)
+
+}
 
 }
 
 function book(time,type){
 
- socket.emit("book",{
-  day:selectedDay,
-  time,
-  nick:user.nick,
-  type
- })
+socket.emit("book",{
+day:selectedDay,
+time,
+nick:user.nick,
+type
+})
 
 }
-
-buildCalendar()
