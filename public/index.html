@@ -11,7 +11,7 @@
 body{
 margin:0;
 font-family:Segoe UI;
-background:url("https://i.imgur.com/L9qYQ6K.jpg") center/cover fixed;
+background:url("https://en-wiki.metin2.gameforge.com/images/SpiderDungeon2.jpg") center/cover fixed;
 color:white;
 }
 
@@ -24,8 +24,10 @@ min-height:100vh;
 display:flex;
 justify-content:center;
 align-items:center;
-padding:20px;
-border-bottom:2px solid #caa64a;
+padding:15px;
+border-bottom:3px solid #caa64a;
+background:#0d0d0d;
+position:relative;
 }
 
 .logo{
@@ -35,9 +37,10 @@ height:60px;
 .adminIcon{
 position:absolute;
 right:20px;
-top:20px;
+top:18px;
+font-size:24px;
 cursor:pointer;
-font-size:22px;
+color:#ffd36a;
 }
 
 .panel{
@@ -51,19 +54,22 @@ display:flex;
 justify-content:center;
 gap:25px;
 margin-bottom:20px;
+flex-wrap:wrap;
 }
 
 .price{
-background:#121212;
+background:#141414;
 border:2px solid #6a5125;
-border-radius:8px;
+border-radius:10px;
 padding:15px;
 width:180px;
 text-align:center;
+box-shadow:0 0 10px rgba(0,0,0,0.6);
 }
 
-.price img{
-width:28px;
+.priceIcon{
+font-size:28px;
+margin-bottom:5px;
 }
 
 .calendar{
@@ -75,25 +81,26 @@ margin-bottom:20px;
 background:#3b2a0f;
 border:1px solid #caa64a;
 color:#ffd36a;
-padding:5px 10px;
+padding:6px 12px;
 cursor:pointer;
 }
 
 .slots{
 display:grid;
-grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
 gap:18px;
 }
 
 .slot{
-background:#121212;
+background:#151515;
+border-radius:10px;
 border:2px solid #333;
-border-radius:8px;
 padding:10px;
+box-shadow:0 0 12px rgba(0,0,0,0.6);
 }
 
 .free{border-color:#2e9c45}
-.taken{border-color:#c05}
+.taken{border-color:#b53}
 .blocked{border-color:#777;background:#333}
 
 .time{
@@ -126,6 +133,12 @@ cursor:pointer;
 width:100%;
 }
 
+.blockText{
+color:red;
+font-weight:bold;
+text-align:center;
+}
+
 </style>
 
 </head>
@@ -136,7 +149,7 @@ width:100%;
 
 <div class="header">
 
-<img class="logo" src="https://i.imgur.com/2KX6yLh.png">
+<img class="logo" src="https://i.postimg.cc/9FJpY0yL/logo.png">
 
 <div class="adminIcon" onclick="adminLogin()">⚙</div>
 
@@ -147,26 +160,22 @@ width:100%;
 <div class="pricing">
 
 <div class="price">
-<img src="https://i.imgur.com/6W6JkqF.png">
-<div>Solo</div>
-5k SM
+<div class="priceIcon">💎</div>
+Solo<br>5k SM
 </div>
 
 <div class="price">
-<img src="https://i.imgur.com/6W6JkqF.png">
-<div>Party 2</div>
-2k SM
+<div class="priceIcon">💎</div>
+Party 2<br>2k SM
 </div>
 
 <div class="price">
-<img src="https://i.imgur.com/6W6JkqF.png">
-<div>Party 3</div>
-1.5k SM
+<div class="priceIcon">💎</div>
+Party 3<br>1.5k SM
 </div>
 
 <div class="price">
-<img src="https://i.imgur.com/7vF4GZs.png">
-<div>Płatność</div>
+<div class="priceIcon">🪙</div>
 Yang / SM
 </div>
 
@@ -197,14 +206,11 @@ let day=new Date().toISOString().slice(0,10)
 let admin=false
 
 function adminLogin(){
-
 let pass=prompt("Admin password")
-
 if(pass==="platforma"){
 admin=true
 render()
 }
-
 }
 
 function prevDay(){
@@ -231,7 +237,7 @@ container.innerHTML=""
 let dayData=bookings[day]||{}
 
 if(dayData.blockedDay){
-container.innerHTML="<h2 style='text-align:center;color:red'>EXP WYŁĄCZONE TEGO DNIA</h2>"
+container.innerHTML="<div class='blockText'>EXP WYŁĄCZONE TEGO DNIA</div>"
 return
 }
 
@@ -271,7 +277,7 @@ div.innerHTML=`
 
 div.classList.add("blocked")
 
-div.innerHTML=`<div class="time">${label}</div>ZABLOKOWANE`
+div.innerHTML=`<div class="time">${label}</div><div class="blockText">ZABLOKOWANE</div>`
 
 }else{
 
