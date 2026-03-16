@@ -2,27 +2,42 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>V2 EXP PANEL</title>
+<title>V2 EXP</title>
 
 <script src="/socket.io/socket.io.js"></script>
 
 <style>
 
 body{
-background:#0b0b0b;
-font-family:Segoe UI;
-color:white;
 margin:0;
+font-family:Segoe UI;
+background:url("https://i.imgur.com/L9qYQ6K.jpg") center/cover fixed;
+color:white;
+}
+
+.overlay{
+background:rgba(0,0,0,0.75);
+min-height:100vh;
 }
 
 .header{
-background:linear-gradient(#1a1a1a,#0d0d0d);
-border-bottom:3px solid #caa64a;
-text-align:center;
+display:flex;
+justify-content:center;
+align-items:center;
 padding:20px;
-font-size:26px;
-color:#ffd36a;
-letter-spacing:2px;
+border-bottom:2px solid #caa64a;
+}
+
+.logo{
+height:60px;
+}
+
+.adminIcon{
+position:absolute;
+right:20px;
+top:20px;
+cursor:pointer;
+font-size:22px;
 }
 
 .panel{
@@ -34,22 +49,21 @@ padding:20px;
 .pricing{
 display:flex;
 justify-content:center;
-gap:20px;
-margin-bottom:25px;
+gap:25px;
+margin-bottom:20px;
 }
 
 .price{
-background:#141414;
+background:#121212;
 border:2px solid #6a5125;
 border-radius:8px;
 padding:15px;
-width:200px;
+width:180px;
 text-align:center;
 }
 
-.price h3{
-color:#ffd36a;
-margin:0;
+.price img{
+width:28px;
 }
 
 .calendar{
@@ -61,18 +75,18 @@ margin-bottom:20px;
 background:#3b2a0f;
 border:1px solid #caa64a;
 color:#ffd36a;
-padding:5px 12px;
+padding:5px 10px;
 cursor:pointer;
 }
 
 .slots{
 display:grid;
-grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
 gap:18px;
 }
 
 .slot{
-background:#151515;
+background:#121212;
 border:2px solid #333;
 border-radius:8px;
 padding:10px;
@@ -90,12 +104,12 @@ margin-bottom:6px;
 
 .players{
 font-size:14px;
-margin-bottom:6px;
+margin-bottom:5px;
 }
 
 input,select{
 width:100%;
-background:#222;
+background:#1d1d1d;
 border:1px solid #555;
 color:white;
 padding:4px;
@@ -112,25 +126,20 @@ cursor:pointer;
 width:100%;
 }
 
-.admin{
-text-align:center;
-margin-bottom:10px;
-}
-
-.stats{
-text-align:center;
-color:#9f9;
-margin-bottom:10px;
-}
-
 </style>
 
 </head>
 
 <body>
 
+<div class="overlay">
+
 <div class="header">
-V2 EXP BOOKING PANEL
+
+<img class="logo" src="https://i.imgur.com/2KX6yLh.png">
+
+<div class="adminIcon" onclick="adminLogin()">⚙</div>
+
 </div>
 
 <div class="panel">
@@ -138,24 +147,29 @@ V2 EXP BOOKING PANEL
 <div class="pricing">
 
 <div class="price">
-<h3>SOLO</h3>
-5k SM / godz
+<img src="https://i.imgur.com/6W6JkqF.png">
+<div>Solo</div>
+5k SM
 </div>
 
 <div class="price">
-<h3>PARTY 2</h3>
-2k SM / osoba
+<img src="https://i.imgur.com/6W6JkqF.png">
+<div>Party 2</div>
+2k SM
 </div>
 
 <div class="price">
-<h3>PARTY 3</h3>
-1.5k SM / osoba
+<img src="https://i.imgur.com/6W6JkqF.png">
+<div>Party 3</div>
+1.5k SM
 </div>
 
+<div class="price">
+<img src="https://i.imgur.com/7vF4GZs.png">
+<div>Płatność</div>
+Yang / SM
 </div>
 
-<div style="text-align:center;margin-bottom:20px;">
-Możliwa płatność w Yang
 </div>
 
 <div class="calendar">
@@ -168,26 +182,30 @@ Możliwa płatność w Yang
 
 </div>
 
-<div class="admin">
-
-<input id="adminPass" placeholder="Admin password">
-<button onclick="loginAdmin()">Admin</button>
+<div class="slots" id="slots"></div>
 
 </div>
-
-<div id="stats" class="stats"></div>
-
-<div class="slots" id="slots"></div>
 
 </div>
 
 <script>
 
-const socket = io()
+const socket=io()
 
 let bookings={}
 let day=new Date().toISOString().slice(0,10)
 let admin=false
+
+function adminLogin(){
+
+let pass=prompt("Admin password")
+
+if(pass==="platforma"){
+admin=true
+render()
+}
+
+}
 
 function prevDay(){
 let d=new Date(day)
@@ -203,13 +221,6 @@ day=d.toISOString().slice(0,10)
 render()
 }
 
-function loginAdmin(){
-if(document.getElementById("adminPass").value==="platforma"){
-admin=true
-render()
-}
-}
-
 function render(){
 
 document.getElementById("day").innerText=day
@@ -219,26 +230,29 @@ container.innerHTML=""
 
 let dayData=bookings[day]||{}
 
-let sm=0
+if(dayData.blockedDay){
+container.innerHTML="<h2 style='text-align:center;color:red'>EXP WYŁĄCZONE TEGO DNIA</h2>"
+return
+}
 
 for(let h=0;h<24;h++){
 
 let start=String(h).padStart(2,"0")+":00"
 let end=String((h+1)%24).padStart(2,"0")+":00"
 
+let label=start+" - "+end
+
 let div=document.createElement("div")
 div.className="slot"
 
 let slot=dayData[start]
-
-let timeLabel=start+" - "+end
 
 if(!slot){
 
 div.classList.add("free")
 
 div.innerHTML=`
-<div class="time">${timeLabel}</div>
+<div class="time">${label}</div>
 
 <input id="p_${start}" placeholder="Nick">
 
@@ -257,7 +271,7 @@ div.innerHTML=`
 
 div.classList.add("blocked")
 
-div.innerHTML=`<div class="time">${timeLabel}</div>ZABLOKOWANE`
+div.innerHTML=`<div class="time">${label}</div>ZABLOKOWANE`
 
 }else{
 
@@ -269,37 +283,30 @@ slot.players.forEach(p=>{
 playersHTML+=`<div>${p.player}</div>`
 })
 
-let joinForm=""
+let join=""
 
 if(slot.players.length<slot.type){
 
-joinForm=`
+join=`
 <input id="p_${start}" placeholder="Nick">
 <input id="pin_${start}" placeholder="PIN">
 <button onclick="book('${start}')">Dołącz</button>
 `
+
 }
 
 div.innerHTML=`
-<div class="time">${timeLabel}</div>
+<div class="time">${label}</div>
 <div class="players">${playersHTML}</div>
-${joinForm}
+${join}
 <input id="pin_cancel_${start}" placeholder="PIN do anulowania">
 <button onclick="cancel('${start}')">Anuluj</button>
 `
-
-if(slot.type==1) sm+=5000
-if(slot.type==2) sm+=2000*slot.players.length
-if(slot.type==3) sm+=1500*slot.players.length
 
 }
 
 container.appendChild(div)
 
-}
-
-if(admin){
-document.getElementById("stats").innerText="Zarobione SM: "+sm
 }
 
 }
@@ -325,8 +332,10 @@ socket.emit("cancel",{day,time,pin})
 }
 
 socket.on("update",(data)=>{
+
 bookings=data
 render()
+
 })
 
 render()
