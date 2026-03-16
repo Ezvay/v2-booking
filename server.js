@@ -2,26 +2,30 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>V2 Booking</title>
+<title>V2 EXP Booking</title>
 
 <script src="/socket.io/socket.io.js"></script>
 
 <style>
 
 body{
-font-family:Arial;
 background:#111;
 color:white;
-text-align:center;
+font-family:Arial;
 margin:0;
+text-align:center;
 }
 
 h1{
-margin-top:20px;
+margin:20px;
+}
+
+.calendar{
+margin:20px;
 }
 
 .container{
-max-width:1100px;
+max-width:1200px;
 margin:auto;
 display:grid;
 grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
@@ -31,8 +35,8 @@ padding:20px;
 
 .slot{
 background:#1a1a1a;
+border-radius:10px;
 border:2px solid #6a5125;
-border-radius:8px;
 padding:10px;
 }
 
@@ -44,27 +48,46 @@ border-color:#3fa34d;
 border-color:#a33;
 }
 
+.blocked{
+border-color:#666;
+background:#333;
+}
+
 button{
-margin-top:5px;
-padding:4px 8px;
 background:#3b2a0f;
 border:1px solid #caa64a;
 color:#ffd36a;
-cursor:pointer;
-border-radius:4px;
-}
-
-input,select{
-width:90%;
+padding:4px 8px;
 margin-top:5px;
+cursor:pointer;
 }
 
 </style>
+
 </head>
 
 <body>
 
-<h1>EXP V2 Booking</h1>
+<h1>EXP V2 BOOKING</h1>
+
+<div class="calendar">
+
+<button onclick="prevDay()">◀</button>
+
+<span id="day"></span>
+
+<button onclick="nextDay()">▶</button>
+
+</div>
+
+<div>
+
+<input id="adminPass" placeholder="Admin password">
+<button onclick="loginAdmin()">Admin login</button>
+
+</div>
+
+<div id="stats"></div>
 
 <div class="container" id="slots"></div>
 
@@ -72,48 +95,107 @@ margin-top:5px;
 
 const socket = io()
 
-const container = document.getElementById("slots")
+let bookings={}
+let currentDay = new Date().toISOString().slice(0,10)
 
-let slots = {}
+let admin=false
 
-function createSlot(time){
+function formatDay(){
+document.getElementById("day").innerText=currentDay
+}
 
-let div = document.createElement("div")
+function prevDay(){
+let d=new Date(currentDay)
+d.setDate(d.getDate()-1)
+currentDay=d.toISOString().slice(0,10)
+render()
+}
+
+function nextDay(){
+let d=new Date(currentDay)
+d.setDate(d.getDate()+1)
+currentDay=d.toISOString().slice(0,10)
+render()
+}
+
+function loginAdmin(){
+
+if(document.getElementById("adminPass").value==="platforma"){
+admin=true
+render()
+}
+
+}
+
+function render(){
+
+formatDay()
+
+let container=document.getElementById("slots")
+container.innerHTML=""
+
+let dayData = bookings[currentDay] || {}
+
+let yang=0
+let sm=0
+
+for(let h=0;h<24;h++){
+
+let time = String(h).padStart(2,"0")+":00"
+
+let div=document.createElement("div")
 div.className="slot"
 
-let title = document.createElement("div")
-title.innerHTML="<b>"+time+"</b>"
+let data=dayData[time]
 
-div.appendChild(title)
-
-if(!slots[time]){
+if(!data){
 
 div.classList.add("free")
 
-div.innerHTML += `
+div.innerHTML=`
+<b>${time}</b>
 <div>WOLNE</div>
-<input placeholder="Nick" id="p_${time}">
+<input id="p_${time}" placeholder="Nick">
 <select id="pay_${time}">
 <option>Yang</option>
 <option>SM</option>
 </select>
-<input placeholder="PIN" id="pin_${time}">
+<input id="pin_${time}" placeholder="PIN">
 <button onclick="book('${time}')">Rezerwuj</button>
 `
+
+}else if(data.blocked){
+
+div.classList.add("blocked")
+
+div.innerHTML=`<b>${time}</b><div>ZABLOKOWANE</div>`
+
+if(admin){
+div.innerHTML+=`<button onclick="adminDelete('${time}')">Odblokuj</button>`
+}
 
 }else{
 
 div.classList.add("taken")
 
-let s = slots[time]
-
-div.innerHTML += `
-<div>${s.player}</div>
-<div>${s.payment}</div>
-<input placeholder="PIN" id="pin_${time}">
+div.innerHTML=`
+<b>${time}</b>
+<div>${data.player}</div>
+<div>${data.payment}</div>
+<input id="pin_${time}" placeholder="PIN">
 <button onclick="edit('${time}')">Edytuj</button>
 <button onclick="cancel('${time}')">Anuluj</button>
 `
+
+if(data.payment==="Yang") yang++
+if(data.payment==="SM") sm++
+
+if(admin){
+div.innerHTML+=`
+<button onclick="adminDelete('${time}')">Usuń</button>
+<button onclick="block('${time}')">Zablokuj</button>
+`
+}
 
 }
 
@@ -121,55 +203,59 @@ container.appendChild(div)
 
 }
 
-function render(){
-
-container.innerHTML=""
-
-for(let h=0;h<24;h++){
-
-let time = String(h).padStart(2,"0")+":00"
-
-createSlot(time)
-
+if(admin){
+document.getElementById("stats").innerHTML=
+`Yang: ${yang} | SM: ${sm}`
 }
 
 }
 
 function book(time){
 
-let player = document.getElementById("p_"+time).value
-let payment = document.getElementById("pay_"+time).value
-let pin = document.getElementById("pin_"+time).value
+let player=document.getElementById("p_"+time).value
+let payment=document.getElementById("pay_"+time).value
+let pin=document.getElementById("pin_"+time).value
 
-socket.emit("book",{time,player,payment,pin})
+socket.emit("book",{day:currentDay,time,player,payment,pin})
 
 }
 
 function edit(time){
 
-let player = prompt("Nowy nick")
-let payment = prompt("Yang / SM")
-let pin = document.getElementById("pin_"+time).value
+let player=prompt("Nick")
+let payment=prompt("Yang/SM")
+let pin=document.getElementById("pin_"+time).value
 
-socket.emit("edit",{time,player,payment,pin})
+socket.emit("edit",{day:currentDay,time,player,payment,pin})
 
 }
 
 function cancel(time){
 
-let pin = document.getElementById("pin_"+time).value
+let pin=document.getElementById("pin_"+time).value
 
-socket.emit("cancel",{time,pin})
+socket.emit("cancel",{day:currentDay,time,pin})
+
+}
+
+function block(time){
+
+socket.emit("block",{password:"platforma",day:currentDay,time})
+
+}
+
+function adminDelete(time){
+
+socket.emit("adminDelete",{password:"platforma",day:currentDay,time})
 
 }
 
 socket.on("update",(data)=>{
-
-slots = data
+bookings=data
+render()
+})
 
 render()
-
-})
 
 </script>
 
