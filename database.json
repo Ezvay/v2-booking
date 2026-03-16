@@ -1,7 +1,15 @@
 {
-"users":[],
+"users":[
+{
+"nick":"admin",
+"email":"kawulok.darek8@gmail.com",
+"password":"admin",
+"role":"admin"
+}
+],
 "bookings":{},
 "messages":{},
+"ranking":{},
 "stats":{
 "sm":0
 }
