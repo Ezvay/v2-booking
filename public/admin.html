@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+<link rel="stylesheet" href="style.css">
+<script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+
+<h1>Panel Administratora</h1>
+
+<div id="messages"></div>
+
+<script>
+
+const socket=io()
+
+socket.emit("getData")
+
+socket.on("data",(db)=>{
+
+const box=document.getElementById("messages")
+
+box.innerHTML=""
+
+for(let u in db.messages){
+
+box.innerHTML+=`<h3>${u}</h3>`
+
+db.messages[u].forEach(m=>{
+box.innerHTML+=`<div>${m.text}</div>`
+})
+
+}
+
+})
+
+</script>
+
+</body>
+</html>
