@@ -2,398 +2,59 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>V2 EXP BOOKING</title>
+<title>V2 EXP PRO PANEL</title>
+
+<link rel="stylesheet" href="styles.css">
 
 <script src="/socket.io/socket.io.js"></script>
-
-<style>
-
-body{
-margin:0;
-font-family:Segoe UI;
-background:url("https://en-wiki.metin2.gameforge.com/images/SpiderDungeon2.jpg") center/cover fixed;
-color:white;
-}
-
-.overlay{
-background:rgba(0,0,0,0.8);
-min-height:100vh;
-}
-
-.header{
-display:flex;
-justify-content:center;
-align-items:center;
-padding:20px;
-border-bottom:3px solid #caa64a;
-background:#0d0d0d;
-position:relative;
-}
-
-.logo{
-height:70px;
-}
-
-.adminIcon{
-position:absolute;
-right:20px;
-top:20px;
-font-size:26px;
-cursor:pointer;
-color:#ffd36a;
-}
-
-.calendar{
-display:grid;
-grid-template-columns:repeat(7,1fr);
-gap:6px;
-max-width:700px;
-margin:20px auto;
-}
-
-.day{
-background:#141414;
-border:1px solid #555;
-padding:10px;
-text-align:center;
-cursor:pointer;
-transition:0.2s;
-}
-
-.day:hover{
-background:#222;
-}
-
-.day.active{
-border:2px solid #caa64a;
-background:#1c1c1c;
-}
-
-.panel{
-max-width:1300px;
-margin:auto;
-padding:20px;
-}
-
-.slots{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-gap:15px;
-}
-
-.slot{
-background:#141414;
-border:2px solid #333;
-padding:10px;
-border-radius:8px;
-transition:0.2s;
-}
-
-.slot:hover{
-box-shadow:0 0 10px #caa64a;
-}
-
-.free{border-color:#2e9c45}
-.taken{border-color:#b53}
-.blocked{border-color:#777;background:#333}
-
-.time{
-color:#ffd36a;
-font-weight:bold;
-margin-bottom:5px;
-}
-
-.players{
-font-size:14px;
-margin-bottom:6px;
-}
-
-.partyButtons{
-display:flex;
-gap:5px;
-}
-
-.partyButtons button{
-flex:1;
-}
-
-input{
-width:100%;
-margin-top:4px;
-background:#1d1d1d;
-border:1px solid #555;
-color:white;
-padding:4px;
-}
-
-button{
-background:#3b2a0f;
-border:1px solid #caa64a;
-color:#ffd36a;
-padding:4px;
-margin-top:4px;
-cursor:pointer;
-width:100%;
-}
-
-.adminPanel{
-position:fixed;
-right:20px;
-bottom:20px;
-background:#111;
-border:2px solid #caa64a;
-padding:15px;
-display:none;
-width:220px;
-}
-
-.adminPanel button{
-margin-top:6px;
-}
-
-.fade{
-animation:fadeIn 0.4s;
-}
-
-@keyframes fadeIn{
-from{opacity:0;transform:translateY(10px)}
-to{opacity:1;transform:translateY(0)}
-}
-
-</style>
 
 </head>
 
 <body>
 
-<div class="overlay">
+<div id="background"></div>
 
-<div class="header">
+<div id="app">
 
-<img class="logo" src="https://prnt.sc/BRxl1uLayID1">
+<header>
 
-<div class="adminIcon" onclick="adminLogin()">⚙</div>
+<img id="logo" src="https://prnt.sc/BRxl1uLayID1">
 
-</div>
+<div id="adminBtn">⚙</div>
 
-<div id="calendar" class="calendar"></div>
+</header>
 
-<div class="panel">
+<section id="calendar"></section>
 
-<div id="slots" class="slots"></div>
-
-</div>
-
-<div class="adminPanel" id="adminPanel">
-
-<h3>Admin Panel</h3>
-
-<button onclick="blockHour()">Zablokuj godzinę</button>
-<button onclick="unblockHour()">Odblokuj godzinę</button>
-
-<button onclick="blockDay()">Zablokuj dzień</button>
-<button onclick="unblockDay()">Odblokuj dzień</button>
+<section id="slots"></section>
 
 </div>
 
+<div id="adminPanel">
+
+<h2>ADMIN PANEL</h2>
+
+<div class="adminStats">
+
+<div>SM zarobione: <span id="statSM">0</span></div>
+<div>Yang: <span id="statYang">0</span></div>
+
 </div>
 
-<script>
+<button onclick="adminBlockHour()">Zablokuj godzinę</button>
+<button onclick="adminUnblockHour()">Odblokuj godzinę</button>
 
-const socket=io()
+<button onclick="adminBlockDay()">Zablokuj dzień</button>
+<button onclick="adminUnblockDay()">Odblokuj dzień</button>
 
-let bookings={}
-let selectedDay=null
-let admin=false
-
-function buildCalendar(){
-
-let cal=document.getElementById("calendar")
-cal.innerHTML=""
-
-let date=new Date()
-let year=date.getFullYear()
-let month=date.getMonth()
-
-let days=new Date(year,month+1,0).getDate()
-
-for(let i=1;i<=days;i++){
-
-let d=document.createElement("div")
-d.className="day"
-d.innerText=i
-
-let iso=year+"-"+String(month+1).padStart(2,"0")+"-"+String(i).padStart(2,"0")
-
-d.onclick=()=>{
-selectedDay=iso
-document.querySelectorAll(".day").forEach(x=>x.classList.remove("active"))
-d.classList.add("active")
-renderSlots()
-}
-
-cal.appendChild(d)
-
-}
-
-}
-
-function renderSlots(){
-
-if(!selectedDay) return
-
-let container=document.getElementById("slots")
-container.innerHTML=""
-
-let dayData=bookings[selectedDay]||{}
-
-if(dayData.blockedDay){
-container.innerHTML="<h2 style='color:red'>EXP WYŁĄCZONE TEGO DNIA</h2>"
-return
-}
-
-for(let h=0;h<24;h++){
-
-let start=String(h).padStart(2,"0")+":00"
-let end=String((h+1)%24).padStart(2,"0")+":00"
-
-let label=start+" - "+end
-
-let div=document.createElement("div")
-div.className="slot fade"
-
-let slot=dayData[start]
-
-if(!slot){
-
-div.classList.add("free")
-
-div.innerHTML=`
-<div class="time">${label}</div>
-
-<input id="p_${start}" placeholder="Nick">
-<input id="pin_${start}" placeholder="PIN">
-
-<div class="partyButtons">
-<button onclick="book('${start}',1)">Solo</button>
-<button onclick="book('${start}',2)">Party2</button>
-<button onclick="book('${start}',3)">Party3</button>
 </div>
-`
 
-}else if(slot.blocked){
-
-div.classList.add("blocked")
-
-div.innerHTML=`<div class="time">${label}</div>ZABLOKOWANE`
-
-}else{
-
-div.classList.add("taken")
-
-let playersHTML=""
-
-slot.players.forEach(p=>{
-playersHTML+=`<div>${p.player}</div>`
-})
-
-div.innerHTML=`
-<div class="time">${label}</div>
-<div>Party ${slot.type}</div>
-<div class="players">${playersHTML}</div>
-
-<input id="p_${start}" placeholder="Nick">
-<input id="pin_${start}" placeholder="PIN">
-
-<button onclick="join('${start}')">Dołącz</button>
-
-<input id="pin_cancel_${start}" placeholder="PIN do anulowania">
-<button onclick="cancel('${start}')">Anuluj</button>
-`
-
-}
-
-container.appendChild(div)
-
-}
-
-}
-
-function book(time,type){
-
-let player=document.getElementById("p_"+time).value
-let pin=document.getElementById("pin_"+time).value
-
-socket.emit("book",{day:selectedDay,time,player,pin,type})
-
-}
-
-function join(time){
-
-let player=document.getElementById("p_"+time).value
-let pin=document.getElementById("pin_"+time).value
-
-socket.emit("book",{day:selectedDay,time,player,pin,type:3})
-
-}
-
-function cancel(time){
-
-let pin=document.getElementById("pin_cancel_"+time).value
-
-socket.emit("cancel",{day:selectedDay,time,pin})
-
-}
-
-function adminLogin(){
-
-let pass=prompt("Admin password")
-
-if(pass==="platforma"){
-admin=true
-document.getElementById("adminPanel").style.display="block"
-}
-
-}
-
-function blockHour(){
-
-let time=prompt("Godzina np 14:00")
-
-socket.emit("blockHour",{password:"platforma",day:selectedDay,time})
-
-}
-
-function unblockHour(){
-
-let time=prompt("Godzina np 14:00")
-
-socket.emit("unblockHour",{password:"platforma",day:selectedDay,time})
-
-}
-
-function blockDay(){
-
-socket.emit("blockDay",{password:"platforma",day:selectedDay})
-
-}
-
-function unblockDay(){
-
-socket.emit("unblockDay",{password:"platforma",day:selectedDay})
-
-}
-
-socket.on("update",(data)=>{
-
-bookings=data
-renderSlots()
-
-})
-
-buildCalendar()
-
-</script>
+<script src="app.js"></script>
+<script src="calendar.js"></script>
+<script src="booking.js"></script>
+<script src="admin.js"></script>
+<script src="animations.js"></script>
+<script src="ui.js"></script>
 
 </body>
 </html>
