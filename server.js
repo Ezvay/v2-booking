@@ -35,7 +35,7 @@ const {day,time,player,pin,type}=data
 let d=getDay(day)
 
 if(!d[time]){
-d[time]={type:parseInt(type),players:[{player,pin}]}
+d[time]={type:type,players:[{player,pin}]}
 save()
 io.emit("update",bookings)
 return
