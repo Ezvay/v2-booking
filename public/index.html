@@ -2,173 +2,25 @@
 <html>
 
 <head>
-
 <title>Metin2 V2 Booking</title>
-
-<style>
-
-body{
-background:#0a0a0a;
-color:#d4af37;
-font-family:Verdana;
-padding:20px;
-}
-
-h1{
-color:gold;
-}
-
-.calendar{
-display:flex;
-flex-wrap:wrap;
-}
-
-.day{
-border:1px solid gold;
-padding:8px;
-margin:5px;
-cursor:pointer;
-}
-
-.slot{
-border:1px solid gold;
-padding:8px;
-margin:4px;
-display:flex;
-justify-content:space-between;
-}
-
-button{
-background:gold;
-border:none;
-padding:5px 10px;
-cursor:pointer;
-}
-
-button:hover{
-background:#ffd700;
-}
-
-</style>
-
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 <h1>Rezerwacja EXP V2</h1>
 
-<div class="calendar" id="days"></div>
+<div id="calendar"></div>
 
-<h2 id="selected"></h2>
+<h2 id="selectedDay"></h2>
 
 <div id="slots"></div>
 
-<script>
+<h3>Wiadomość do admina</h3>
+<textarea id="msg"></textarea>
+<button onclick="sendMsg()">Wyślij</button>
 
-let reservations=[]
-
-async function load(){
-
-const r = await fetch("/api/reservations")
-
-reservations = await r.json()
-
-generateDays()
-
-}
-
-function generateDays(){
-
-const days = document.getElementById("days")
-
-days.innerHTML=""
-
-for(let i=0;i<30;i++){
-
-const d = new Date()
-
-d.setDate(d.getDate()+i)
-
-const date = d.toISOString().split("T")[0]
-
-const div = document.createElement("div")
-
-div.className="day"
-
-div.innerText=date
-
-div.onclick=()=>showSlots(date)
-
-days.appendChild(div)
-
-}
-
-}
-
-function showSlots(date){
-
-document.getElementById("selected").innerText=date
-
-const container=document.getElementById("slots")
-
-container.innerHTML=""
-
-for(let h=0;h<24;h++){
-
-const r = reservations.find(x=>x.date==date && x.hour==h)
-
-const div=document.createElement("div")
-
-div.className="slot"
-
-if(!r){
-
-div.innerHTML=`
-${h}:00
-<button onclick="reserve('${date}',${h},'solo')">SOLO</button>
-<button onclick="reserve('${date}',${h},'duo')">DUO</button>
-<button onclick="reserve('${date}',${h},'trio')">TRIO</button>
-`
-
-}else{
-
-div.innerHTML=`
-${h}:00
-${r.type} (${r.players.length})
-`
-
-}
-
-container.appendChild(div)
-
-}
-
-}
-
-async function reserve(date,hour,type){
-
-const nick = prompt("Twój nick")
-
-const r = await fetch("/api/reserve",{
-
-method:"POST",
-headers:{"Content-Type":"application/json"},
-
-body:JSON.stringify({date,hour,type,nick})
-
-})
-
-const data = await r.json()
-
-alert("PIN rezerwacji: "+data.pin)
-
-load()
-
-}
-
-load()
-
-</script>
+<script src="script.js"></script>
 
 </body>
 </html>
