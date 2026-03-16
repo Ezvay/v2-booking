@@ -1,7 +1,7 @@
 {
-  "name": "v2-booking",
+  "name": "v2-exp-booking",
   "version": "1.0.0",
-  "description": "Metin2 V2 booking",
+  "description": "Metin2 V2 EXP Booking",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
