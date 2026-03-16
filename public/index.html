@@ -2,7 +2,6 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-
 <title>V2 EXP Booking</title>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -10,67 +9,120 @@
 <style>
 
 body{
-background:#111;
-color:white;
-font-family:Arial;
+background:#0c0c0c;
+color:#eee;
+font-family:Segoe UI,Arial;
 margin:0;
-text-align:center;
 }
 
-h1{
-margin-top:20px;
-}
-
-.pricing{
-background:#1a1a1a;
-border:2px solid #6a5125;
-border-radius:10px;
+.header{
+background:#111;
+border-bottom:2px solid #6a5125;
 padding:15px;
-max-width:700px;
-margin:auto;
-margin-bottom:20px;
+text-align:center;
+font-size:22px;
+font-weight:bold;
+color:#ffd36a;
 }
 
-.calendar{
-margin:20px;
-}
-
-.container{
+.panel{
 max-width:1200px;
 margin:auto;
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-gap:15px;
 padding:20px;
 }
 
-.slot{
-background:#1a1a1a;
-border-radius:10px;
+.pricing{
+display:flex;
+justify-content:center;
+gap:20px;
+margin-bottom:20px;
+flex-wrap:wrap;
+}
+
+.priceCard{
+background:#151515;
 border:2px solid #6a5125;
+border-radius:10px;
+padding:15px;
+width:180px;
+text-align:center;
+}
+
+.priceTitle{
+color:#ffd36a;
+font-weight:bold;
+margin-bottom:5px;
+}
+
+.calendar{
+text-align:center;
+margin-bottom:20px;
+}
+
+.calendar button{
+background:#3b2a0f;
+border:1px solid #caa64a;
+color:#ffd36a;
+padding:4px 10px;
+cursor:pointer;
+}
+
+.slots{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+gap:15px;
+}
+
+.slot{
+background:#151515;
+border-radius:8px;
+border:2px solid #333;
 padding:10px;
 }
 
-.free{border-color:#3fa34d}
-.taken{border-color:#a33}
-.blocked{border-color:#555;background:#333}
+.free{border-color:#2d8f3c}
+.taken{border-color:#b53}
+.blocked{border-color:#666;background:#333}
+
+.time{
+color:#ffd36a;
+font-weight:bold;
+margin-bottom:5px;
+}
+
+.players{
+font-size:13px;
+margin-bottom:5px;
+}
+
+input,select{
+width:95%;
+margin-top:3px;
+background:#222;
+border:1px solid #555;
+color:white;
+padding:3px;
+}
 
 button{
 background:#3b2a0f;
 border:1px solid #caa64a;
 color:#ffd36a;
 padding:4px 8px;
-margin-top:5px;
+margin-top:4px;
 cursor:pointer;
+width:100%;
 }
 
-input,select{
-width:90%;
-margin-top:5px;
+.adminPanel{
+text-align:center;
+margin-bottom:10px;
 }
 
-.player{
-font-size:14px;
+.stats{
+text-align:center;
+margin-bottom:10px;
+color:#9f9;
 }
 
 </style>
@@ -79,32 +131,33 @@ font-size:14px;
 
 <body>
 
-<h1>EXP V2 BOOKING</h1>
+<div class="header">
+V2 EXP BOOKING
+</div>
+
+<div class="panel">
 
 <div class="pricing">
 
-<h3>Cennik</h3>
-
-Solo EXP  
-<br>
+<div class="priceCard">
+<div class="priceTitle">Solo</div>
 5k SM / godzina
+</div>
 
-<br><br>
-
-Party 2 osoby  
-<br>
+<div class="priceCard">
+<div class="priceTitle">Party 2</div>
 2k SM / osoba
+</div>
 
-<br><br>
-
-Party 3 osoby  
-<br>
+<div class="priceCard">
+<div class="priceTitle">Party 3</div>
 1.5k SM / osoba
+</div>
 
-<br><br>
+</div>
 
+<div style="text-align:center;margin-bottom:10px;">
 Możliwa płatność w Yang
-
 </div>
 
 <div class="calendar">
@@ -117,31 +170,27 @@ Możliwa płatność w Yang
 
 </div>
 
-<div>
+<div class="adminPanel">
 
 <input id="adminPass" placeholder="Admin password">
 
-<button onclick="loginAdmin()">Admin</button>
+<button onclick="loginAdmin()" style="width:120px;">Admin</button>
 
 </div>
 
-<div id="stats"></div>
+<div id="stats" class="stats"></div>
 
-<div class="container" id="slots"></div>
+<div class="slots" id="slots"></div>
+
+</div>
 
 <script>
 
 const socket = io()
 
 let bookings={}
-
-let day = new Date().toISOString().slice(0,10)
-
+let day=new Date().toISOString().slice(0,10)
 let admin=false
-
-function formatDay(){
-document.getElementById("day").innerText=day
-}
 
 function prevDay(){
 let d=new Date(day)
@@ -158,20 +207,17 @@ render()
 }
 
 function loginAdmin(){
-
 if(document.getElementById("adminPass").value==="platforma"){
 admin=true
 render()
 }
-
 }
 
 function render(){
 
-formatDay()
+document.getElementById("day").innerText=day
 
 let container=document.getElementById("slots")
-
 container.innerHTML=""
 
 let dayData=bookings[day]||{}
@@ -182,74 +228,73 @@ for(let h=0;h<24;h++){
 
 let start=String(h).padStart(2,"0")+":00"
 let end=String((h+1)%24).padStart(2,"0")+":00"
-
-let time=start+" - "+end
-
-let key=start
+let label=start+" - "+end
 
 let div=document.createElement("div")
 div.className="slot"
 
-let slot=dayData[key]
+let slot=dayData[start]
 
 if(!slot){
 
 div.classList.add("free")
 
 div.innerHTML=`
-<b>${time}</b>
+<div class="time">${label}</div>
+<div>Wolny slot</div>
 
-<div>WOLNE</div>
+<input id="p_${start}" placeholder="Nick">
 
-<input id="p_${key}" placeholder="Nick">
-
-<select id="type_${key}">
+<select id="type_${start}">
 <option value="1">Solo</option>
 <option value="2">Party 2</option>
 <option value="3">Party 3</option>
 </select>
 
-<input id="pin_${key}" placeholder="PIN">
+<input id="pin_${start}" placeholder="PIN">
 
-<button onclick="book('${key}')">Zarezerwuj</button>
+<button onclick="book('${start}')">Rezerwuj</button>
 `
 
 }else if(slot.blocked){
 
 div.classList.add("blocked")
 
-div.innerHTML=`<b>${time}</b><div>ZABLOKOWANE</div>`
+div.innerHTML=`
+<div class="time">${label}</div>
+ZABLOKOWANE
+`
 
 if(admin){
-div.innerHTML+=`<button onclick="adminDelete('${key}')">Odblokuj</button>`
+div.innerHTML+=`<button onclick="adminDelete('${start}')">Odblokuj</button>`
 }
 
 }else{
 
 div.classList.add("taken")
 
-let html=`<b>${time}</b>`
+let playersHTML=""
 
 slot.players.forEach(p=>{
-html+=`<div class="player">${p.player}</div>`
+playersHTML+=`<div>${p.player}</div>`
 })
 
-html+=`
-<input id="pin_${key}" placeholder="PIN">
+div.innerHTML=`
+<div class="time">${label}</div>
+<div class="players">${playersHTML}</div>
 
-<button onclick="cancel('${key}')">Anuluj</button>
+<input id="pin_${start}" placeholder="PIN">
+
+<button onclick="join('${start}')">Dołącz</button>
+<button onclick="cancel('${start}')">Anuluj</button>
 `
 
 if(admin){
-
-html+=`
-<button onclick="block('${key}')">Zablokuj</button>
-<button onclick="adminDelete('${key}')">Usuń</button>
+div.innerHTML+=`
+<button onclick="block('${start}')">Zablokuj</button>
+<button onclick="adminDelete('${start}')">Usuń</button>
 `
-
 }
-
-div.innerHTML=html
 
 if(slot.type==1) sm+=5000
 if(slot.type==2) sm+=2000*slot.players.length
@@ -262,11 +307,7 @@ container.appendChild(div)
 }
 
 if(admin){
-
-document.getElementById("stats").innerHTML=
-
-`Zarobione SM: ${sm}`
-
+document.getElementById("stats").innerText="Zarobione SM: "+sm
 }
 
 }
@@ -278,6 +319,15 @@ let pin=document.getElementById("pin_"+time).value
 let type=parseInt(document.getElementById("type_"+time).value)
 
 socket.emit("book",{day,time,player,pin,type})
+
+}
+
+function join(time){
+
+let player=prompt("Nick")
+let pin=prompt("PIN")
+
+socket.emit("book",{day,time,player,pin,type:3})
 
 }
 
@@ -302,11 +352,8 @@ socket.emit("adminDelete",{password:"platforma",day,time})
 }
 
 socket.on("update",(data)=>{
-
 bookings=data
-
 render()
-
 })
 
 render()
