@@ -1,35 +1,30 @@
-const { Pool } = require("pg");
+const pool = require("./db")
 
-const pool = new Pool({
- connectionString: process.env.DATABASE_URL,
- ssl: { rejectUnauthorized: false }
-});
+async function generate(){
 
-async function generateSlots(){
+const today = new Date()
 
- const today = new Date();
+for(let d=0; d<30; d++){
 
- for(let d = 0; d < 30; d++){
+ const date = new Date()
+ date.setDate(today.getDate()+d)
 
-  const date = new Date();
-  date.setDate(today.getDate() + d);
+ const formatted = date.toISOString().split("T")[0]
 
-  const formattedDate = date.toISOString().split("T")[0];
+ for(let hour=0; hour<24; hour++){
 
-  for(let hour = 0; hour < 24; hour++){
-
-   await pool.query(
-    "INSERT INTO slots(date, hour) VALUES($1,$2)",
-    [formattedDate, hour]
-   );
-
-  }
+  await pool.query(
+   "INSERT INTO slots(date,hour) VALUES($1,$2)",
+   [formatted,hour]
+  )
 
  }
 
- console.log("Slots generated");
-
- process.exit();
 }
 
-generateSlots();
+console.log("slots created")
+process.exit()
+
+}
+
+generate()
