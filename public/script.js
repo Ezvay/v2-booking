@@ -1,110 +1,111 @@
 let reservations=[]
-let locked=[]
 
 async function load(){
 
- const r=await fetch("/api/reservations")
- reservations=await r.json()
+const r=await fetch("/api/reservations")
+reservations=await r.json()
 
- const l=await fetch("/api/locked")
- locked=await l.json()
-
- calendar()
+createCalendar()
 
 }
 
-function calendar(){
+function createCalendar(){
 
- const cal=document.getElementById("calendar")
+const cal=document.getElementById("calendar")
+cal.innerHTML=""
 
- cal.innerHTML=""
+for(let i=0;i<30;i++){
 
- for(let i=0;i<30;i++){
+const d=new Date()
+d.setDate(d.getDate()+i)
 
-  const d=new Date()
-  d.setDate(d.getDate()+i)
+const date=d.toISOString().split("T")[0]
 
-  const date=d.toISOString().split("T")[0]
+const div=document.createElement("div")
+div.className="day"
+div.innerText=date
 
-  const div=document.createElement("div")
-  div.className="day"
-  div.innerText=date
+div.onclick=()=>showSlots(date)
 
-  div.onclick=()=>show(date)
-
-  cal.appendChild(div)
-
- }
+cal.appendChild(div)
 
 }
 
-function show(date){
+}
 
- document.getElementById("selectedDay").innerText=date
+function showSlots(date){
 
- const container=document.getElementById("slots")
- container.innerHTML=""
+document.getElementById("selectedDay").innerText=date
 
- for(let h=0;h<24;h++){
+const container=document.getElementById("slots")
+container.innerHTML=""
 
-  const r=reservations.find(x=>x.date==date && x.hour==h)
+for(let h=0;h<24;h++){
 
-  const div=document.createElement("div")
-  div.className="slot"
+const r=reservations.find(x=>x.date==date && x.hour==h)
 
-  if(!r){
+const div=document.createElement("div")
+div.className="slot"
 
-   div.innerHTML=`
-   ${h}:00
-   <button onclick="reserve('${date}',${h},'solo')">SOLO</button>
-   <button onclick="reserve('${date}',${h},'duo')">DUO</button>
-   <button onclick="reserve('${date}',${h},'trio')">TRIO</button>
-   `
+if(!r){
 
-  }else{
+div.classList.add("free")
 
-   div.innerHTML=`
-   ${h}:00
-   ${r.type} (${r.players.length}) PIN:${r.pin}
-   `
+div.innerHTML=`
+<h3>${h}:00</h3>
+<button onclick="reserve('${date}',${h},'solo')">SOLO</button>
+<button onclick="reserve('${date}',${h},'duo')">DUO</button>
+<button onclick="reserve('${date}',${h},'trio')">TRIO</button>
+`
 
-  }
+}else{
 
-  container.appendChild(div)
+div.classList.add("taken")
 
- }
+div.innerHTML=`
+<h3>${h}:00</h3>
+${r.type.toUpperCase()}<br>
+Gracz: ${r.players[0]}
+`
+
+}
+
+container.appendChild(div)
+
+}
 
 }
 
 async function reserve(date,hour,type){
 
- const nick=prompt("Twój nick")
+const nick=prompt("Twój nick")
+const pin=prompt("Ustaw PIN rezerwacji")
 
- const r=await fetch("/api/reserve",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({date,hour,type,nick})
- })
+await fetch("/api/reserve",{
 
- const data=await r.json()
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({date,hour,type,nick,pin})
 
- alert("PIN rezerwacji: "+data.pin)
+})
 
- load()
+load()
 
 }
 
 async function sendMsg(){
 
- const text=document.getElementById("msg").value
+const text=document.getElementById("msg").value
 
- await fetch("/api/messages",{
-  method:"POST",
-  headers:{"Content-Type":"application/json"},
-  body:JSON.stringify({text})
- })
+await fetch("/api/messages",{
 
- alert("wysłano")
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({text})
+
+})
+
+alert("wysłano")
 
 }
 
