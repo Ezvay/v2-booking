@@ -72,15 +72,26 @@ io.emit("update",bookings)
 
 })
 
-socket.on("block",(data)=>{
+socket.on("blockHour",(data)=>{
 
 const {password,day,time}=data
-
 if(password!==ADMIN_PASSWORD) return
 
 let d=getDay(day)
-
 d[time]={blocked:true}
+
+save()
+io.emit("update",bookings)
+
+})
+
+socket.on("unblockHour",(data)=>{
+
+const {password,day,time}=data
+if(password!==ADMIN_PASSWORD) return
+
+let d=getDay(day)
+delete d[time]
 
 save()
 io.emit("update",bookings)
@@ -90,7 +101,6 @@ io.emit("update",bookings)
 socket.on("blockDay",(data)=>{
 
 const {password,day}=data
-
 if(password!==ADMIN_PASSWORD) return
 
 bookings[day]={blockedDay:true}
@@ -100,15 +110,12 @@ io.emit("update",bookings)
 
 })
 
-socket.on("adminDelete",(data)=>{
+socket.on("unblockDay",(data)=>{
 
-const {password,day,time}=data
-
+const {password,day}=data
 if(password!==ADMIN_PASSWORD) return
 
-let d=getDay(day)
-
-delete d[time]
+delete bookings[day]
 
 save()
 io.emit("update",bookings)
