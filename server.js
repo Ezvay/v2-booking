@@ -1,18 +1,18 @@
-const express = require("express")
-const app = express()
-const http = require("http").createServer(app)
-const io = require("socket.io")(http)
-const fs = require("fs")
+const express=require("express")
+const app=express()
+const http=require("http").createServer(app)
+const io=require("socket.io")(http)
+const fs=require("fs")
 
 app.use(express.static("public"))
 
-const FILE = "data.json"
-const ADMIN_PASSWORD = "platforma"
+const FILE="data.json"
+const ADMIN_PASSWORD="platforma"
 
-let bookings = {}
+let bookings={}
 
 if(fs.existsSync(FILE)){
-bookings = JSON.parse(fs.readFileSync(FILE))
+bookings=JSON.parse(fs.readFileSync(FILE))
 }
 
 function save(){
@@ -35,10 +35,7 @@ const {day,time,player,pin,type}=data
 let d=getDay(day)
 
 if(!d[time]){
-d[time]={
-type:parseInt(type),
-players:[{player,pin}]
-}
+d[time]={type:parseInt(type),players:[{player,pin}]}
 save()
 io.emit("update",bookings)
 return
