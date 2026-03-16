@@ -2,110 +2,131 @@ let reservations=[]
 
 async function load(){
 
-const r=await fetch("/api/reservations")
-reservations=await r.json()
+ const r=await fetch("/api/reservations")
+ reservations=await r.json()
 
-createCalendar()
+ createCalendar()
 
 }
 
 function createCalendar(){
 
-const cal=document.getElementById("calendar")
-cal.innerHTML=""
+ const cal=document.getElementById("calendar")
+ cal.innerHTML=""
 
-for(let i=0;i<30;i++){
+ for(let i=0;i<30;i++){
 
-const d=new Date()
-d.setDate(d.getDate()+i)
+  const d=new Date()
+  d.setDate(d.getDate()+i)
 
-const date=d.toISOString().split("T")[0]
+  const date=d.toISOString().split("T")[0]
 
-const div=document.createElement("div")
-div.className="day"
-div.innerText=date
+  const div=document.createElement("div")
+  div.className="day"
+  div.innerText=date
 
-div.onclick=()=>showSlots(date)
+  div.onclick=()=>showSlots(date)
 
-cal.appendChild(div)
+  cal.appendChild(div)
 
-}
+ }
 
 }
 
 function showSlots(date){
 
-document.getElementById("selectedDay").innerText=date
+ document.getElementById("selectedDay").innerText=date
 
-const container=document.getElementById("slots")
-container.innerHTML=""
+ const container=document.getElementById("slots")
+ container.innerHTML=""
 
-for(let h=0;h<24;h++){
+ for(let h=0;h<24;h++){
 
-const r=reservations.find(x=>x.date==date && x.hour==h)
+  const r=reservations.find(x=>x.date==date && x.hour==h)
 
-const div=document.createElement("div")
-div.className="slot"
+  const div=document.createElement("div")
+  div.className="slot"
 
-if(!r){
+  if(!r){
 
-div.classList.add("free")
+   div.classList.add("free")
 
-div.innerHTML=`
-<h3>${h}:00</h3>
-<button onclick="reserve('${date}',${h},'solo')">SOLO</button>
-<button onclick="reserve('${date}',${h},'duo')">DUO</button>
-<button onclick="reserve('${date}',${h},'trio')">TRIO</button>
-`
+   div.innerHTML=`
+   <h3>${h}:00</h3>
 
-}else{
+   <input id="nick${h}" placeholder="nick">
+   <input id="pin${h}" placeholder="pin">
 
-div.classList.add("taken")
+   <button onclick="reserve('${date}',${h},'solo')">SOLO</button>
+   <button onclick="reserve('${date}',${h},'duo')">DUO</button>
+   <button onclick="reserve('${date}',${h},'trio')">TRIO</button>
+   `
 
-div.innerHTML=`
-<h3>${h}:00</h3>
-${r.type.toUpperCase()}<br>
-Gracz: ${r.players[0]}
-`
+  }else{
 
-}
+   let limit=1
+   if(r.type==="duo") limit=2
+   if(r.type==="trio") limit=3
 
-container.appendChild(div)
+   let join=""
 
-}
+   if(r.players.length < limit){
+
+    join=`
+    <input id="join${h}" placeholder="nick">
+    <button onclick="join('${date}',${h})">DOŁĄCZ</button>
+    `
+
+   }
+
+   div.classList.add("taken")
+
+   div.innerHTML=`
+   <h3>${h}:00</h3>
+   ${r.type.toUpperCase()} (${r.players.length}/${limit})<br>
+   ${r.players.join(", ")}
+   <br>
+   ${join}
+   `
+
+  }
+
+  container.appendChild(div)
+
+ }
 
 }
 
 async function reserve(date,hour,type){
 
-const nick=prompt("Twój nick")
-const pin=prompt("Ustaw PIN rezerwacji")
+ const nick=document.getElementById("nick"+hour).value
+ const pin=document.getElementById("pin"+hour).value
 
-await fetch("/api/reserve",{
+ await fetch("/api/reserve",{
 
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({date,hour,type,nick,pin})
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({date,hour,type,nick,pin})
 
-})
+ })
 
-load()
+ load()
 
 }
 
-async function sendMsg(){
+async function join(date,hour){
 
-const text=document.getElementById("msg").value
+ const nick=document.getElementById("join"+hour).value
 
-await fetch("/api/messages",{
+ await fetch("/api/reserve",{
 
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({text})
+  method:"POST",
+  headers:{"Content-Type":"application/json"},
+  body:JSON.stringify({date,hour,nick})
 
-})
+ })
 
-alert("wysłano")
+ load()
 
 }
 
