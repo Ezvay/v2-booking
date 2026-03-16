@@ -1,26 +1,69 @@
 const API = "https://v2-booking-backend.onrender.com/api"
 
+let allSlots = []
+
 async function loadSlots(){
 
 const res = await fetch(API + "/reservations/slots")
-const slots = await res.json()
 
-const container = document.getElementById("slots")
-container.innerHTML = ""
+allSlots = await res.json()
 
-slots.slice(0,200).forEach(slot=>{
+generateCalendar()
+
+}
+
+function generateCalendar(){
+
+const calendar = document.getElementById("calendar")
+
+calendar.innerHTML=""
+
+const days = [...new Set(allSlots.map(s=>s.date))]
+
+days.forEach(date=>{
 
 const div = document.createElement("div")
+
+div.className="day"
+
+div.innerText = date
+
+div.onclick = ()=>showSlots(date)
+
+calendar.appendChild(div)
+
+})
+
+}
+
+function showSlots(date){
+
+document.getElementById("selectedDay").innerText = date
+
+const container = document.getElementById("slots")
+
+container.innerHTML=""
+
+const slots = allSlots.filter(s=>s.date===date)
+
+slots.forEach(slot=>{
+
+const div = document.createElement("div")
+
 div.className="slot"
 
-div.innerHTML = `
-<span>${slot.date} | ${slot.hour}:00</span>
+div.innerHTML=`
+
+<span>${slot.hour}:00</span>
 
 <div>
+
 <button onclick="reserve(${slot.id},'solo')">SOLO</button>
 <button onclick="reserve(${slot.id},'duo')">DUO</button>
 <button onclick="reserve(${slot.id},'trio')">TRIO</button>
+
 </div>
+
 `
 
 container.appendChild(div)
@@ -57,13 +100,11 @@ alert("Rezerwacja wykonana. PIN: "+data.pin)
 
 }
 
-async function cancelReservation(){
+async function lockSlot(){
 
-const pin = prompt("Podaj PIN rezerwacji")
+const slotId = prompt("ID slotu do blokady")
 
-if(!pin) return
-
-await fetch(API + "/admin/cancel",{
+await fetch(API + "/admin/lock",{
 
 method:"POST",
 
@@ -71,11 +112,13 @@ headers:{
 "Content-Type":"application/json"
 },
 
-body:JSON.stringify({pin:pin})
+body:JSON.stringify({
+slotId:slotId
+})
 
 })
 
-alert("Rezerwacja anulowana")
+alert("Slot zablokowany")
 
 }
 
