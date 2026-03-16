@@ -3,98 +3,149 @@ const app=express()
 const http=require("http").createServer(app)
 const io=require("socket.io")(http)
 const fs=require("fs")
+const bcrypt=require("bcrypt")
+const nodemailer=require("nodemailer")
 
 app.use(express.static("public"))
+app.use(express.json())
 
-const FILE="data.json"
-const ADMIN_PASSWORD="platforma"
+const DB="database.json"
 
-let bookings={}
-let chat=[]
-let ranking={}
-
-if(fs.existsSync(FILE)){
-let data=JSON.parse(fs.readFileSync(FILE))
-bookings=data.bookings||{}
-chat=data.chat||[]
-ranking=data.ranking||{}
+function loadDB(){
+ return JSON.parse(fs.readFileSync(DB))
 }
 
-function save(){
-fs.writeFileSync(FILE,JSON.stringify({bookings,chat,ranking},null,2))
+function saveDB(data){
+ fs.writeFileSync(DB,JSON.stringify(data,null,2))
 }
 
-function getDay(day){
-if(!bookings[day]) bookings[day]={}
-return bookings[day]
+const transporter = nodemailer.createTransport({
+ service:"gmail",
+ auth:{
+  user:process.env.EMAIL_USER,
+  pass:process.env.EMAIL_PASS
+ }
+})
+
+function sendEmail(to,subject,text){
+ transporter.sendMail({
+  from:process.env.EMAIL_USER,
+  to,
+  subject,
+  text
+ })
 }
+
+app.post("/register",async(req,res)=>{
+
+ const db=loadDB()
+
+ const {nick,email,password,pin}=req.body
+
+ const hash=await bcrypt.hash(password,10)
+
+ db.users.push({
+  nick,
+  email,
+  password:hash,
+  pin
+ })
+
+ saveDB(db)
+
+ sendEmail(email,"Rejestracja V2 EXP","Twoje konto zostało utworzone.")
+
+ res.json({ok:true})
+
+})
+
+app.post("/login",async(req,res)=>{
+
+ const db=loadDB()
+
+ const {nick,password}=req.body
+
+ const user=db.users.find(u=>u.nick===nick)
+
+ if(!user) return res.json({ok:false})
+
+ const valid=await bcrypt.compare(password,user.password)
+
+ if(!valid) return res.json({ok:false})
+
+ res.json({ok:true,user})
+
+})
 
 io.on("connection",(socket)=>{
 
-socket.emit("init",{bookings,chat,ranking})
+ socket.on("book",(data)=>{
 
-socket.on("book",(data)=>{
+  const db=loadDB()
 
-const {day,time,player,pin,type}=data
+  const {day,time,nick,type}=data
 
-let d=getDay(day)
+  if(!db.bookings[day]) db.bookings[day]={}
 
-if(!d[time]){
-d[time]={type,players:[{player,pin}]}
-}else{
-if(d[time].players.length>=d[time].type) return
-d[time].players.push({player,pin})
-}
+  if(!db.bookings[day][time]){
 
-if(!ranking[player]) ranking[player]=0
-ranking[player]++
+   db.bookings[day][time]={
+    type:type,
+    players:[nick]
+   }
 
-save()
+  }else{
 
-io.emit("update",{bookings,chat,ranking})
+   if(db.bookings[day][time].players.length>=db.bookings[day][time].type) return
 
-})
+   db.bookings[day][time].players.push(nick)
 
-socket.on("cancel",(data)=>{
+  }
 
-const {day,time,pin}=data
-let d=getDay(day)
+  db.stats.sm+= type==1 ? 5000 : type==2 ? 2000 : 1500
 
-if(!d[time]) return
+  saveDB(db)
 
-d[time].players=d[time].players.filter(p=>p.pin!==pin)
+  io.emit("update",db.bookings)
 
-if(d[time].players.length===0) delete d[time]
+ })
 
-save()
+ socket.on("cancel",(data)=>{
 
-io.emit("update",{bookings,chat,ranking})
+  const db=loadDB()
 
-})
+  const {day,time,nick}=data
 
-socket.on("blockHour",(data)=>{
+  if(!db.bookings[day]) return
 
-if(data.password!==ADMIN_PASSWORD) return
+  const slot=db.bookings[day][time]
 
-let d=getDay(data.day)
-d[data.time]={blocked:true}
+  slot.players=slot.players.filter(p=>p!==nick)
 
-save()
+  if(slot.players.length==0) delete db.bookings[day][time]
 
-io.emit("update",{bookings,chat,ranking})
+  saveDB(db)
 
-})
+  io.emit("update",db.bookings)
 
-socket.on("chat",(msg)=>{
+ })
 
-chat.push(msg)
-if(chat.length>100) chat.shift()
+ socket.on("message",(data)=>{
 
-save()
+  const db=loadDB()
 
-io.emit("chat",chat)
+  const {nick,text}=data
 
-})
+  if(!db.messages[nick]) db.messages[nick]=[]
+
+  db.messages[nick].push({
+   from:"user",
+   text
+  })
+
+  saveDB(db)
+
+ })
 
 })
 
