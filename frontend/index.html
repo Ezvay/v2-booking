@@ -13,14 +13,19 @@
 
 <h1>Rezerwacja EXP V2</h1>
 
-<div class="controls">
+<div id="calendar"></div>
 
-<button onclick="loadSlots()">Odśwież</button>
-<button onclick="cancelReservation()">Anuluj rezerwację (PIN)</button>
-
-</div>
+<h2 id="selectedDay"></h2>
 
 <div id="slots"></div>
+
+<div class="admin">
+
+<h3>Panel administratora</h3>
+
+<button onclick="lockSlot()">Zablokuj slot</button>
+
+</div>
 
 <script src="script.js"></script>
 
