@@ -11,15 +11,17 @@ const ADMIN_PASSWORD="platforma"
 
 let bookings={}
 let stats={sm:0,yang:0}
+let chat=[]
 
 if(fs.existsSync(FILE)){
 let data=JSON.parse(fs.readFileSync(FILE))
 bookings=data.bookings||{}
 stats=data.stats||stats
+chat=data.chat||[]
 }
 
 function save(){
-fs.writeFileSync(FILE,JSON.stringify({bookings,stats},null,2))
+fs.writeFileSync(FILE,JSON.stringify({bookings,stats,chat},null,2))
 }
 
 function getDay(day){
@@ -29,7 +31,7 @@ return bookings[day]
 
 io.on("connection",(socket)=>{
 
-socket.emit("init",{bookings,stats})
+socket.emit("init",{bookings,stats,chat})
 
 socket.on("book",(data)=>{
 
@@ -48,7 +50,7 @@ if(type===2) stats.sm+=2000
 if(type===3) stats.sm+=1500
 
 save()
-io.emit("update",{bookings,stats})
+io.emit("update",{bookings,stats,chat})
 
 })
 
@@ -61,10 +63,12 @@ if(!d[time]) return
 
 d[time].players=d[time].players.filter(p=>p.pin!==pin)
 
-if(d[time].players.length===0) delete d[time]
+if(d[time].players.length===0){
+delete d[time]
+}
 
 save()
-io.emit("update",{bookings,stats})
+io.emit("update",{bookings,stats,chat})
 
 })
 
@@ -76,7 +80,7 @@ let d=getDay(data.day)
 d[data.time]={blocked:true}
 
 save()
-io.emit("update",{bookings,stats})
+io.emit("update",{bookings,stats,chat})
 
 })
 
@@ -88,7 +92,7 @@ let d=getDay(data.day)
 delete d[data.time]
 
 save()
-io.emit("update",{bookings,stats})
+io.emit("update",{bookings,stats,chat})
 
 })
 
@@ -99,7 +103,7 @@ if(data.password!==ADMIN_PASSWORD) return
 bookings[data.day]={blockedDay:true}
 
 save()
-io.emit("update",{bookings,stats})
+io.emit("update",{bookings,stats,chat})
 
 })
 
@@ -110,7 +114,17 @@ if(data.password!==ADMIN_PASSWORD) return
 delete bookings[data.day]
 
 save()
-io.emit("update",{bookings,stats})
+io.emit("update",{bookings,stats,chat})
+
+})
+
+socket.on("chat",(msg)=>{
+
+chat.push(msg)
+if(chat.length>100) chat.shift()
+
+save()
+io.emit("chat",chat)
 
 })
 
