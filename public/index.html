@@ -2,59 +2,431 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<title>V2 EXP PRO PANEL</title>
 
-<link rel="stylesheet" href="styles.css">
+<title>V2 EXP PANEL</title>
 
 <script src="/socket.io/socket.io.js"></script>
+
+<style>
+
+body{
+margin:0;
+font-family:Segoe UI;
+background:url("https://en-wiki.metin2.gameforge.com/images/SpiderDungeon2.jpg") center/cover fixed;
+color:white;
+}
+
+.overlay{
+background:rgba(0,0,0,0.8);
+min-height:100vh;
+}
+
+header{
+display:flex;
+justify-content:center;
+align-items:center;
+border-bottom:3px solid gold;
+padding:20px;
+position:relative;
+}
+
+#logo{
+height:350px;
+}
+
+#adminBtn{
+position:absolute;
+right:30px;
+top:30px;
+font-size:28px;
+cursor:pointer;
+color:gold;
+}
+
+.calendar{
+display:grid;
+grid-template-columns:repeat(7,1fr);
+gap:8px;
+max-width:800px;
+margin:20px auto;
+}
+
+.day{
+background:#111;
+border:1px solid #555;
+padding:12px;
+text-align:center;
+cursor:pointer;
+transition:0.2s;
+}
+
+.day:hover{
+background:#222;
+}
+
+.day.active{
+border:2px solid gold;
+}
+
+#slots{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+gap:20px;
+max-width:1200px;
+margin:auto;
+padding:20px;
+}
+
+.slot{
+background:#111;
+border:2px solid #333;
+padding:12px;
+border-radius:10px;
+transition:0.2s;
+}
+
+.slot:hover{
+box-shadow:0 0 10px gold;
+}
+
+.free{border-color:green}
+.taken{border-color:red}
+.blocked{border-color:gray}
+
+button{
+background:#3b2a0f;
+border:1px solid gold;
+color:gold;
+padding:6px;
+cursor:pointer;
+margin-top:5px;
+width:100%;
+}
+
+input{
+width:100%;
+margin-top:5px;
+padding:5px;
+background:#222;
+border:1px solid #555;
+color:white;
+}
+
+#chat{
+position:fixed;
+left:20px;
+bottom:20px;
+width:250px;
+background:#111;
+border:2px solid gold;
+padding:10px;
+}
+
+#chatMessages{
+height:150px;
+overflow-y:auto;
+font-size:13px;
+}
+
+#adminPanel{
+position:fixed;
+right:20px;
+bottom:20px;
+background:#111;
+border:2px solid gold;
+padding:15px;
+display:none;
+width:260px;
+}
+
+</style>
 
 </head>
 
 <body>
 
-<div id="background"></div>
-
-<div id="app">
+<div class="overlay">
 
 <header>
 
-<img id="logo" src="https://zapodaj.net/images/01e4e4691fd7a.png">
+<img id="logo" src="https://prnt.sc/BRxl1uLayID1">
 
 <div id="adminBtn">⚙</div>
 
 </header>
 
-<section id="calendar"></section>
+<div id="calendar" class="calendar"></div>
 
-<section id="slots"></section>
+<div id="slots"></div>
+
+<div id="chat">
+
+<div id="chatMessages"></div>
+
+<input id="chatInput" placeholder="Napisz wiadomość">
+
+<button onclick="sendChat()">Wyślij</button>
 
 </div>
 
 <div id="adminPanel">
 
-<h2>ADMIN PANEL</h2>
+<h3>ADMIN</h3>
 
-<div class="adminStats">
-
-<div>SM zarobione: <span id="statSM">0</span></div>
+<div>SM: <span id="statSM">0</span></div>
 <div>Yang: <span id="statYang">0</span></div>
 
-</div>
+<button onclick="blockHour()">Zablokuj godzinę</button>
+<button onclick="unblockHour()">Odblokuj godzinę</button>
 
-<button onclick="adminBlockHour()">Zablokuj godzinę</button>
-<button onclick="adminUnblockHour()">Odblokuj godzinę</button>
-
-<button onclick="adminBlockDay()">Zablokuj dzień</button>
-<button onclick="adminUnblockDay()">Odblokuj dzień</button>
+<button onclick="blockDay()">Zablokuj dzień</button>
+<button onclick="unblockDay()">Odblokuj dzień</button>
 
 </div>
 
-<script src="app.js"></script>
-<script src="calendar.js"></script>
-<script src="booking.js"></script>
-<script src="admin.js"></script>
-<script src="animations.js"></script>
-<script src="ui.js"></script>
+</div>
+
+<script>
+
+const socket=io()
+
+let bookings={}
+let stats={}
+let selectedDay=null
+let chat=[]
+
+socket.on("init",(data)=>{
+
+bookings=data.bookings
+stats=data.stats
+chat=data.chat
+
+updateStats()
+renderChat()
+
+})
+
+socket.on("update",(data)=>{
+
+bookings=data.bookings
+stats=data.stats
+
+updateStats()
+renderSlots()
+
+})
+
+socket.on("chat",(data)=>{
+
+chat=data
+renderChat()
+
+})
+
+function updateStats(){
+document.getElementById("statSM").innerText=stats.sm
+document.getElementById("statYang").innerText=stats.yang
+}
+
+function renderChat(){
+
+let box=document.getElementById("chatMessages")
+box.innerHTML=""
+
+chat.forEach(m=>{
+box.innerHTML+="<div>"+m+"</div>"
+})
+
+}
+
+function sendChat(){
+
+let msg=document.getElementById("chatInput").value
+
+socket.emit("chat",msg)
+
+document.getElementById("chatInput").value=""
+
+}
+
+function buildCalendar(){
+
+let cal=document.getElementById("calendar")
+cal.innerHTML=""
+
+let date=new Date()
+let year=date.getFullYear()
+let month=date.getMonth()
+
+let days=new Date(year,month+1,0).getDate()
+
+for(let i=1;i<=days;i++){
+
+let d=document.createElement("div")
+d.className="day"
+d.innerText=i
+
+let iso=year+"-"+String(month+1).padStart(2,"0")+"-"+String(i).padStart(2,"0")
+
+d.onclick=()=>{
+
+selectedDay=iso
+
+document.querySelectorAll(".day").forEach(x=>x.classList.remove("active"))
+d.classList.add("active")
+
+renderSlots()
+
+}
+
+cal.appendChild(d)
+
+}
+
+}
+
+function renderSlots(){
+
+if(!selectedDay) return
+
+let container=document.getElementById("slots")
+container.innerHTML=""
+
+let dayData=bookings[selectedDay]||{}
+
+if(dayData.blockedDay){
+container.innerHTML="<h2 style='color:red'>EXP WYŁĄCZONE</h2>"
+return
+}
+
+for(let h=0;h<24;h++){
+
+let start=String(h).padStart(2,"0")+":00"
+let end=String((h+1)%24).padStart(2,"0")+":00"
+
+let div=document.createElement("div")
+div.className="slot"
+
+let slot=dayData[start]
+
+if(!slot){
+
+div.classList.add("free")
+
+div.innerHTML=`
+<div>${start}-${end}</div>
+
+<input id="p_${start}" placeholder="Nick">
+<input id="pin_${start}" placeholder="PIN">
+
+<button onclick="book('${start}',1)">Solo</button>
+<button onclick="book('${start}',2)">Party2</button>
+<button onclick="book('${start}',3)">Party3</button>
+`
+
+}else if(slot.blocked){
+
+div.classList.add("blocked")
+div.innerHTML=`${start}-${end} ZABLOKOWANE`
+
+}else{
+
+div.classList.add("taken")
+
+let playersHTML=""
+
+slot.players.forEach(p=>{
+playersHTML+="<div>"+p.player+"</div>"
+})
+
+div.innerHTML=`
+<div>${start}-${end}</div>
+<div>Party ${slot.type}</div>
+${playersHTML}
+
+<input id="p_${start}" placeholder="Nick">
+<input id="pin_${start}" placeholder="PIN">
+<button onclick="join('${start}')">Dołącz</button>
+
+<input id="pin_cancel_${start}" placeholder="PIN anulowania">
+<button onclick="cancel('${start}')">Anuluj</button>
+`
+
+}
+
+container.appendChild(div)
+
+}
+
+}
+
+function book(time,type){
+
+let player=document.getElementById("p_"+time).value
+let pin=document.getElementById("pin_"+time).value
+
+socket.emit("book",{day:selectedDay,time,player,pin,type})
+
+}
+
+function join(time){
+
+let player=document.getElementById("p_"+time).value
+let pin=document.getElementById("pin_"+time).value
+
+socket.emit("book",{day:selectedDay,time,player,pin,type:3})
+
+}
+
+function cancel(time){
+
+let pin=document.getElementById("pin_cancel_"+time).value
+
+socket.emit("cancel",{day:selectedDay,time,pin})
+
+}
+
+document.getElementById("adminBtn").onclick=()=>{
+
+let pass=prompt("Admin password")
+
+if(pass==="platforma"){
+document.getElementById("adminPanel").style.display="block"
+}
+
+}
+
+function blockHour(){
+
+let time=prompt("Godzina np 14:00")
+
+socket.emit("blockHour",{password:"platforma",day:selectedDay,time})
+
+}
+
+function unblockHour(){
+
+let time=prompt("Godzina np 14:00")
+
+socket.emit("unblockHour",{password:"platforma",day:selectedDay,time})
+
+}
+
+function blockDay(){
+
+socket.emit("blockDay",{password:"platforma",day:selectedDay})
+
+}
+
+function unblockDay(){
+
+socket.emit("unblockDay",{password:"platforma",day:selectedDay})
+
+}
+
+buildCalendar()
+
+</script>
 
 </body>
 </html>
