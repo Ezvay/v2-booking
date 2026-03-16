@@ -64,7 +64,7 @@ div.className="slot"
 
 div.innerHTML = `
 <span>${slot.date} | ${slot.hour}:00</span>
-<button>Rezerwuj</button>
+<button onclick="reserve(${slot.id})">Rezerwuj</button>
 `
 
 container.appendChild(div)
