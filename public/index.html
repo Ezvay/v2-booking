@@ -17,7 +17,7 @@ color:white;
 }
 
 .overlay{
-background:rgba(0,0,0,0.8);
+background:rgba(0,0,0,0.85);
 min-height:100vh;
 }
 
@@ -38,7 +38,7 @@ height:350px;
 position:absolute;
 right:30px;
 top:30px;
-font-size:28px;
+font-size:30px;
 cursor:pointer;
 color:gold;
 }
@@ -46,15 +46,15 @@ color:gold;
 .calendar{
 display:grid;
 grid-template-columns:repeat(7,1fr);
-gap:8px;
-max-width:800px;
+gap:10px;
+max-width:900px;
 margin:20px auto;
 }
 
 .day{
 background:#111;
 border:1px solid #555;
-padding:12px;
+padding:15px;
 text-align:center;
 cursor:pointer;
 transition:0.2s;
@@ -70,9 +70,9 @@ border:2px solid gold;
 
 #slots{
 display:grid;
-grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
 gap:20px;
-max-width:1200px;
+max-width:1300px;
 margin:auto;
 padding:20px;
 }
@@ -80,13 +80,14 @@ padding:20px;
 .slot{
 background:#111;
 border:2px solid #333;
-padding:12px;
-border-radius:10px;
+padding:15px;
+border-radius:12px;
 transition:0.2s;
 }
 
 .slot:hover{
-box-shadow:0 0 10px gold;
+box-shadow:0 0 12px gold;
+transform:scale(1.02);
 }
 
 .free{border-color:green}
@@ -99,14 +100,14 @@ border:1px solid gold;
 color:gold;
 padding:6px;
 cursor:pointer;
-margin-top:5px;
+margin-top:6px;
 width:100%;
 }
 
 input{
 width:100%;
-margin-top:5px;
-padding:5px;
+margin-top:6px;
+padding:6px;
 background:#222;
 border:1px solid #555;
 color:white;
@@ -116,16 +117,26 @@ color:white;
 position:fixed;
 left:20px;
 bottom:20px;
-width:250px;
+width:260px;
 background:#111;
 border:2px solid gold;
 padding:10px;
 }
 
 #chatMessages{
-height:150px;
+height:160px;
 overflow-y:auto;
 font-size:13px;
+}
+
+#ranking{
+position:fixed;
+left:20px;
+top:150px;
+background:#111;
+border:2px solid gold;
+padding:10px;
+width:200px;
 }
 
 #adminPanel{
@@ -137,6 +148,17 @@ border:2px solid gold;
 padding:15px;
 display:none;
 width:260px;
+}
+
+.toast{
+position:fixed;
+top:20px;
+left:50%;
+transform:translateX(-50%);
+background:#111;
+border:2px solid gold;
+padding:10px;
+display:none;
 }
 
 </style>
@@ -159,11 +181,16 @@ width:260px;
 
 <div id="slots"></div>
 
+<div id="ranking">
+<b>Ranking klientów</b>
+<div id="rankingList"></div>
+</div>
+
 <div id="chat">
 
 <div id="chatMessages"></div>
 
-<input id="chatInput" placeholder="Napisz wiadomość">
+<input id="chatInput" placeholder="Napisz...">
 
 <button onclick="sendChat()">Wyślij</button>
 
@@ -174,7 +201,6 @@ width:260px;
 <h3>ADMIN</h3>
 
 <div>SM: <span id="statSM">0</span></div>
-<div>Yang: <span id="statYang">0</span></div>
 
 <button onclick="blockHour()">Zablokuj godzinę</button>
 <button onclick="unblockHour()">Odblokuj godzinę</button>
@@ -184,6 +210,8 @@ width:260px;
 
 </div>
 
+<div id="toast" class="toast"></div>
+
 </div>
 
 <script>
@@ -192,16 +220,29 @@ const socket=io()
 
 let bookings={}
 let stats={}
-let selectedDay=null
+let ranking={}
 let chat=[]
+let selectedDay=null
+
+function toast(msg){
+
+let t=document.getElementById("toast")
+
+t.innerText=msg
+t.style.display="block"
+
+setTimeout(()=>t.style.display="none",2000)
+
+}
 
 socket.on("init",(data)=>{
 
 bookings=data.bookings
 stats=data.stats
+ranking=data.ranking
 chat=data.chat
 
-updateStats()
+renderRanking()
 renderChat()
 
 })
@@ -210,9 +251,10 @@ socket.on("update",(data)=>{
 
 bookings=data.bookings
 stats=data.stats
+ranking=data.ranking
 
-updateStats()
 renderSlots()
+renderRanking()
 
 })
 
@@ -223,14 +265,27 @@ renderChat()
 
 })
 
-function updateStats(){
-document.getElementById("statSM").innerText=stats.sm
-document.getElementById("statYang").innerText=stats.yang
+function renderRanking(){
+
+let box=document.getElementById("rankingList")
+
+box.innerHTML=""
+
+Object.entries(ranking)
+.sort((a,b)=>b[1]-a[1])
+.slice(0,10)
+.forEach(r=>{
+
+box.innerHTML+=`<div>${r[0]} (${r[1]})</div>`
+
+})
+
 }
 
 function renderChat(){
 
 let box=document.getElementById("chatMessages")
+
 box.innerHTML=""
 
 chat.forEach(m=>{
@@ -252,7 +307,6 @@ document.getElementById("chatInput").value=""
 function buildCalendar(){
 
 let cal=document.getElementById("calendar")
-cal.innerHTML=""
 
 let date=new Date()
 let year=date.getFullYear()
@@ -273,6 +327,7 @@ d.onclick=()=>{
 selectedDay=iso
 
 document.querySelectorAll(".day").forEach(x=>x.classList.remove("active"))
+
 d.classList.add("active")
 
 renderSlots()
@@ -290,6 +345,7 @@ function renderSlots(){
 if(!selectedDay) return
 
 let container=document.getElementById("slots")
+
 container.innerHTML=""
 
 let dayData=bookings[selectedDay]||{}
@@ -305,6 +361,7 @@ let start=String(h).padStart(2,"0")+":00"
 let end=String((h+1)%24).padStart(2,"0")+":00"
 
 let div=document.createElement("div")
+
 div.className="slot"
 
 let slot=dayData[start]
@@ -327,6 +384,7 @@ div.innerHTML=`
 }else if(slot.blocked){
 
 div.classList.add("blocked")
+
 div.innerHTML=`${start}-${end} ZABLOKOWANE`
 
 }else{
@@ -346,6 +404,7 @@ ${playersHTML}
 
 <input id="p_${start}" placeholder="Nick">
 <input id="pin_${start}" placeholder="PIN">
+
 <button onclick="join('${start}')">Dołącz</button>
 
 <input id="pin_cancel_${start}" placeholder="PIN anulowania">
@@ -367,6 +426,8 @@ let pin=document.getElementById("pin_"+time).value
 
 socket.emit("book",{day:selectedDay,time,player,pin,type})
 
+toast("Rezerwacja zapisana")
+
 }
 
 function join(time){
@@ -376,6 +437,8 @@ let pin=document.getElementById("pin_"+time).value
 
 socket.emit("book",{day:selectedDay,time,player,pin,type:3})
 
+toast("Dołączono do expa")
+
 }
 
 function cancel(time){
@@ -383,6 +446,8 @@ function cancel(time){
 let pin=document.getElementById("pin_cancel_"+time).value
 
 socket.emit("cancel",{day:selectedDay,time,pin})
+
+toast("Rezerwacja anulowana")
 
 }
 
