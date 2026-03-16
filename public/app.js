@@ -9,20 +9,20 @@ fetch("/login",{
 method:"POST",
 headers:{"Content-Type":"application/json"},
 body:JSON.stringify({
-nick:document.getElementById("nick").value,
-password:document.getElementById("pass").value
+nick:nick.value,
+password:pass.value
 })
 })
 .then(r=>r.json())
-.then(data=>{
+.then(d=>{
 
-if(data.ok){
+if(d.ok){
 
-user=data.user
+user=d.user
 
 buildCalendar()
 
-socket.emit("getBookings")
+socket.emit("getData")
 
 }
 
@@ -30,18 +30,25 @@ socket.emit("getBookings")
 
 }
 
-socket.on("bookings",(data)=>{
+function register(){
 
-renderSlots(data)
-
+fetch("/register",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+nick:regNick.value,
+email:regEmail.value,
+password:regPass.value
 })
+})
+
+}
 
 function buildCalendar(){
 
 const cal=document.getElementById("calendar")
 
 const date=new Date()
-
 const year=date.getFullYear()
 const month=date.getMonth()
 
@@ -50,18 +57,14 @@ const days=new Date(year,month+1,0).getDate()
 for(let i=1;i<=days;i++){
 
 let d=document.createElement("div")
-
 d.className="day"
 d.innerText=i
 
 let iso=`${year}-${month+1}-${i}`
 
 d.onclick=()=>{
-
 selectedDay=iso
-
-socket.emit("getBookings")
-
+renderSlots()
 }
 
 cal.appendChild(d)
@@ -70,7 +73,7 @@ cal.appendChild(d)
 
 }
 
-function renderSlots(bookings){
+function renderSlots(){
 
 const slots=document.getElementById("slots")
 
@@ -81,15 +84,14 @@ for(let h=0;h<24;h++){
 let time=String(h).padStart(2,"0")+":00"
 
 let div=document.createElement("div")
-
 div.className="slot"
 
 div.innerHTML=`
 <b>${time}</b>
 
-<button onclick="book('${time}',1)">solo</button>
-<button onclick="book('${time}',2)">party2</button>
-<button onclick="book('${time}',3)">party3</button>
+<button onclick="book('${time}',1)">Solo</button>
+<button onclick="book('${time}',2)">Party2</button>
+<button onclick="book('${time}',3)">Party3</button>
 `
 
 slots.appendChild(div)
