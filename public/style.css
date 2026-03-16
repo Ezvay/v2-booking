@@ -1,53 +1,83 @@
 body{
- background:#0a0a0a;
- color:#d4af37;
- font-family:Verdana;
- padding:20px;
+background:#1b1205;
+background-image:radial-gradient(#3a260c,#0e0802);
+font-family:Georgia;
+color:#e8c46a;
+padding:30px;
 }
 
 h1{
- color:gold;
+text-align:center;
+font-size:36px;
+margin-bottom:30px;
 }
 
 #calendar{
- display:flex;
- flex-wrap:wrap;
+display:grid;
+grid-template-columns:repeat(7,1fr);
+gap:8px;
+margin-bottom:30px;
 }
 
 .day{
- border:1px solid gold;
- padding:6px;
- margin:4px;
- cursor:pointer;
+background:#2b1a07;
+border:2px solid #caa24c;
+padding:12px;
+text-align:center;
+cursor:pointer;
+transition:0.2s;
+border-radius:6px;
 }
 
 .day:hover{
- background:#222;
+transform:scale(1.05);
+background:#3a260c;
+}
+
+#slots{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+gap:15px;
 }
 
 .slot{
- border:1px solid gold;
- padding:6px;
- margin:4px;
- display:flex;
- justify-content:space-between;
+background:#2b1a07;
+border:2px solid #caa24c;
+padding:15px;
+border-radius:10px;
+text-align:center;
+transition:0.2s;
+}
+
+.slot:hover{
+transform:scale(1.05);
+}
+
+.slot.free{
+background:#1e3b1e;
+}
+
+.slot.taken{
+background:#3b1e1e;
 }
 
 button{
- background:gold;
- border:none;
- padding:4px 8px;
- cursor:pointer;
+background:#caa24c;
+border:none;
+padding:6px 10px;
+margin-top:5px;
+cursor:pointer;
+border-radius:4px;
 }
 
 button:hover{
- background:#ffd700;
+background:#e8c46a;
 }
 
 textarea{
- width:300px;
- height:80px;
- background:#111;
- color:gold;
- border:1px solid gold;
+width:300px;
+height:80px;
+background:#2b1a07;
+color:#e8c46a;
+border:1px solid #caa24c;
 }
